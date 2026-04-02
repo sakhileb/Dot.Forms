@@ -9,36 +9,35 @@
 
     <x-slot name="form">
         <!-- Team Owner Information -->
-        <div class="col-span-6">
+        <div>
             <x-label value="{{ __('Team Owner') }}" />
 
-            <div class="flex items-center mt-2">
-                <img class="size-12 rounded-full object-cover" src="{{ $team->owner->profile_photo_url }}" alt="{{ $team->owner->name }}">
+            <div style="display: flex; align-items: center; margin-top: 12px;">
+                <img style="height: 48px; width: 48px; border-radius: 50%; object-fit: cover;" src="{{ $team->owner->profile_photo_url }}" alt="{{ $team->owner->name }}">
 
-                <div class="ms-4 leading-tight">
-                    <div class="text-gray-900">{{ $team->owner->name }}</div>
-                    <div class="text-gray-700 text-sm">{{ $team->owner->email }}</div>
+                <div style="margin-left: 16px; line-height: 1.5;">
+                    <div style="color: #1A1A1A; font-weight: 500;">{{ $team->owner->name }}</div>
+                    <div style="color: #6B7280; font-size: 12px;">{{ $team->owner->email }}</div>
                 </div>
             </div>
         </div>
 
         <!-- Team Name -->
-        <div class="col-span-6 sm:col-span-4">
+        <div>
             <x-label for="name" value="{{ __('Team Name') }}" />
 
             <x-input id="name"
                         type="text"
-                        class="mt-1 block w-full"
                         wire:model="state.name"
                         :disabled="! Gate::check('update', $team)" />
 
-            <x-input-error for="name" class="mt-2" />
+            <x-input-error for="name" />
         </div>
     </x-slot>
 
     @if (Gate::check('update', $team))
         <x-slot name="actions">
-            <x-action-message class="me-3" on="saved">
+            <x-action-message on="saved">
                 {{ __('Saved.') }}
             </x-action-message>
 
