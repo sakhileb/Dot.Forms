@@ -77,7 +77,7 @@
                         <div style="height: 32px; width: 32px; border-radius: 50%; background: var(--yellow); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: #1A1A1A;">{{ substr(Auth::user()->name, 0, 1) }}</div>
                     @endif
                 </button>
-                <div @click.away="userOpen = false" x-show="userOpen" style="position: absolute; right: auto; left: 0; top: 100%; margin-top: 8px; background: white; border: 1px solid #E5E7EB; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,.1); min-width: 180px; z-index: 50;">
+                <div @click.away="userOpen = false" x-show="userOpen" style="position: absolute; right: 0; top: 100%; margin-top: 8px; background: white; border: 1px solid #E5E7EB; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,.1); min-width: 180px; z-index: 50;">
                     <div style="padding: 12px; border-bottom: 1px solid #F0F0F0;">
                         <div style="font-size: 13px; font-weight: 600; color: #1A1A1A;">{{ Auth::user()->name }}</div>
                         <div style="font-size: 12px; color: #6B7280;">{{ Auth::user()->email }}</div>
