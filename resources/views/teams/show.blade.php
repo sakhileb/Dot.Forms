@@ -5,29 +5,32 @@
         </h2>
     </x-slot>
 
-    <div>
-        <div class="max-w-7xl mx-auto py-10 sm:px-6 lg:px-8">
-            <div class="px-4 sm:px-0 mb-6">
-                <div class="border-b border-gray-200">
-                    <nav class="-mb-px flex space-x-6" aria-label="Team navigation">
-                        <a href="{{ route('teams.show', $team) }}" class="whitespace-nowrap border-b-2 border-indigo-500 px-1 pb-3 text-sm font-medium text-indigo-600">
-                            {{ __('Settings') }}
-                        </a>
-                        <a href="{{ route('teams.forms', $team) }}" class="whitespace-nowrap border-b-2 border-transparent px-1 pb-3 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
-                            {{ __('Forms') }}
-                        </a>
-                    </nav>
-                </div>
+    <div style="max-width: 1200px; margin: 0 auto; padding: 40px 24px;">
+        <div style="margin-bottom: 40px;">
+            <h1 class="display" style="font-size: 28px; font-weight: 800; margin: 0 0 8px; color: #1A1A1A;">{{ $team->name }}</h1>
+            <p style="font-size: 14px; color: #6B7280; margin: 0;">Manage team settings and members.</p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr; gap: 32px;">
+            <!-- Navigation Tabs -->
+            <div style="border-bottom: 1px solid #F0F0F0; display: flex; gap: 24px;">
+                <a href="{{ route('teams.show', $team) }}" style="padding: 16px 0 12px; font-size: 14px; font-weight: 600; color: var(--yellow-dark); border-bottom: 3px solid var(--yellow); text-decoration: none;">Settings</a>
+                <a href="{{ route('teams.forms', $team) }}" style="padding: 16px 0 12px; font-size: 14px; font-weight: 500; color: #6B7280; border-bottom: 3px solid transparent; text-decoration: none; transition: color .15s, border-color .15s;" onmouseover="this.style.color='#1A1A1A'" onmouseout="this.style.color='#6B7280'">Forms</a>
             </div>
 
-            @livewire('teams.update-team-name-form', ['team' => $team])
+            <!-- Team Settings Card -->
+            <div style="background: white; border-radius: 16px; border: 1px solid #F0F0F0; padding: 32px; box-shadow: 0 2px 12px rgba(0,0,0,.04);">
+                @livewire('teams.update-team-name-form', ['team' => $team])
+            </div>
 
-            @livewire('teams.team-member-manager', ['team' => $team])
+            <!-- Team Members Card -->
+            <div style="background: white; border-radius: 16px; border: 1px solid #F0F0F0; padding: 32px; box-shadow: 0 2px 12px rgba(0,0,0,.04);">
+                @livewire('teams.team-member-manager', ['team' => $team])
+            </div>
 
             @if (Gate::check('delete', $team) && ! $team->personal_team)
-                <x-section-border />
-
-                <div class="mt-10 sm:mt-0">
+                <!-- Delete Team Card -->
+                <div style="background: white; border-radius: 16px; border: 1px solid #F0F0F0; padding: 32px; box-shadow: 0 2px 12px rgba(0,0,0,.04);">
                     @livewire('teams.delete-team-form', ['team' => $team])
                 </div>
             @endif

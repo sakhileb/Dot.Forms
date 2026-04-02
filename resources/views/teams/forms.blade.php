@@ -5,24 +5,15 @@
         </h2>
     </x-slot>
 
-    <div class="py-10">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="px-4 sm:px-0 mb-6">
-                <div class="border-b border-gray-200">
-                    <nav class="-mb-px flex space-x-6" aria-label="Team navigation">
-                        <a href="{{ route('teams.show', $team) }}" class="whitespace-nowrap border-b-2 border-transparent px-1 pb-3 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
-                            {{ __('Settings') }}
-                        </a>
-                        <a href="{{ route('teams.forms', $team) }}" class="whitespace-nowrap border-b-2 border-indigo-500 px-1 pb-3 text-sm font-medium text-indigo-600">
-                            {{ __('Forms') }}
-                        </a>
-                    </nav>
-                </div>
-            </div>
+    <div style="max-width: 1200px; margin: 0 auto; padding: 40px 24px;">
+        <!-- Navigation Tabs -->
+        <div style="border-bottom: 1px solid #F0F0F0; display: flex; gap: 24px; margin-bottom: 40px;">
+            <a href="{{ route('teams.show', $team) }}" style="padding: 16px 0 12px; font-size: 14px; font-weight: 500; color: #6B7280; border-bottom: 3px solid transparent; text-decoration: none; transition: color .15s, border-color .15s;" onmouseover="this.style.color='#1A1A1A'" onmouseout="this.style.color='#6B7280'">Settings</a>
+            <a href="{{ route('teams.forms', $team) }}" style="padding: 16px 0 12px; font-size: 14px; font-weight: 600; color: var(--yellow-dark); border-bottom: 3px solid var(--yellow); text-decoration: none;">Forms</a>
+        </div>
 
-            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6">
-                @livewire('forms.index', ['team' => $team])
-            </div>
+        <div style="background: white; border-radius: 16px; border: 1px solid #F0F0F0; padding: 32px; box-shadow: 0 2px 12px rgba(0,0,0,.04);">
+            @livewire('forms.index', ['team' => $team])
         </div>
     </div>
 </x-app-layout>
