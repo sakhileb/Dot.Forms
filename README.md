@@ -1,6 +1,6 @@
 # Dot.Forms
 
-![Dot.Forms logo](public/images/dot_forms.png)
+<img src="public/images/dot_forms.png" alt="Dot.Forms logo" width="200">
 
 Dot.Forms is an AI-powered, team-ready form platform built with Laravel 13, Livewire 3, and Jetstream Teams. It combines a visual form builder, public form publishing, submission analytics, and workflow integrations in one product.
 
