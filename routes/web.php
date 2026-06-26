@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Auth\EcosystemAuthController;
+
 use App\Livewire\Dashboard\Analytics as DashboardAnalytics;
 use App\Livewire\Forms\Builder;
 use App\Livewire\Forms\AiAnalytics;
@@ -11,9 +13,12 @@ use App\Models\Team;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/auth/ecosystem', [EcosystemAuthController::class, 'handle'])->name('auth.ecosystem');
+
 Route::get('/', function () {
     return view('welcome');
 });
+
 
 Route::middleware([
     'auth:sanctum',
@@ -50,5 +55,6 @@ Route::middleware([
     Route::get('/teams/{team}/forms/{form}/ai-analytics', AiAnalytics::class)
         ->name('teams.forms.ai-analytics');
 });
+
 
 Route::get('/forms/{slug}', PublicView::class)->name('forms.public');
