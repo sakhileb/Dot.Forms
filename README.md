@@ -1,71 +1,79 @@
 <div align="center">
 
-<img src="public/images/dot_forms.png" alt="Dot.Forms" width="200" />
+<img src="docs/logo.svg" alt="Dot.Forms" width="320" />
 
-<h1>Dot.Forms</h1>
+<br /><br />
 
-<p>Powerful form builder and submission management — build, publish, and analyse forms without writing code.</p>
+**Build, publish, and analyse forms without writing code.**
 
-[![PHP](https://img.shields.io/badge/PHP-8.4-777BB4?style=flat-square&logo=php&logoColor=white)](https://php.net)
-[![Laravel](https://img.shields.io/badge/Laravel-12.x-FF2D20?style=flat-square&logo=laravel&logoColor=white)](https://laravel.com)
-[![Livewire](https://img.shields.io/badge/Livewire-3.x-4E56A6?style=flat-square)](https://livewire.laravel.com)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql&logoColor=white)](https://postgresql.org)
-[![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
+<br />
+
+![Laravel](https://img.shields.io/badge/Laravel-12-FF2D20?style=flat-square&logo=laravel&logoColor=white) ![PHP](https://img.shields.io/badge/PHP-8.4-777BB4?style=flat-square&logo=php&logoColor=white) ![Livewire](https://img.shields.io/badge/Livewire-3-FB70A9?style=flat-square) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?style=flat-square&logo=postgresql&logoColor=white)
+
+<br /><br />
+
+**Part of the [InfoDot Ecosystem](https://github.com/sakhileb/InfoDot)** &nbsp;·&nbsp; `forms.infodot.app`
 
 </div>
 
 ---
 
-## Overview
+## What is Dot.Forms?
 
-Dot.Forms is the form builder platform in the Dot ecosystem. Build multi-page forms with drag-and-drop field configuration, publish them with a shareable link, and analyse submissions in a live dashboard — without touching code.
+Dot.Forms is the form-building and submission-management platform in the InfoDot ecosystem. An AI-powered builder lets teams assemble forms in seconds; a live analytics panel tracks every response in real time.
 
----
+## Core Features
 
-## Features
+- Drag-and-drop field builder — text, select, file, date, signature, and more
+- AI-powered form generation from a plain-language prompt
+- Conditional logic — show/hide fields based on responses
+- Multi-page forms with progress indicator
+- Real-time submission dashboard with CSV/Excel export
+- Webhook delivery of submissions to external systems
+- Embed forms on any website via iframe snippet
+- Ecosystem SSO from InfoDot hub
 
-- Drag-and-drop form builder with 15+ field types
-- Multi-page forms with conditional logic
-- Shareable public form links with optional password protection
-- Submission inbox with filtering, export (CSV/PDF), and webhooks
-- Response analytics — completion rate, drop-off, field stats
-- Email notifications on new submissions
-- Full-text search across submissions
-- Ecosystem SSO — authenticate from InfoDot with a single click
+## Domain Models
 
----
+- **Form** — published form with settings
+- **FormField** — individual field definition
+- **FormSubmission** — captured response
+- **FormSubmissionValue** — per-field answer
 
 ## Tech Stack
 
 | Layer | Technology |
 |---|---|
-| Framework | Laravel 12 + PHP 8.4 |
-| Frontend | Livewire 3 + Vite + Tailwind CSS |
-| Auth | Jetstream 5 + Sanctum (ecosystem SSO) |
-| Database | PostgreSQL 16 (shared infodot instance) |
-| WebSockets | Laravel Reverb |
-
----
+| Framework | Laravel 12 |
+| Language | PHP 8.4 |
+| Frontend | Livewire 3 · Alpine.js 3 · Tailwind CSS |
+| Database | PostgreSQL 16 (shared across ecosystem) |
+| Realtime | Laravel Reverb |
+| Auth | Laravel Sanctum (InfoDot SSO) |
+| AI | Anthropic Claude (`claude-sonnet-4-6`) |
+| Storage | AWS S3 / Local (Flysystem) |
+| Search | Laravel Scout · Meilisearch |
+| Queue | Redis · Laravel Horizon |
 
 ## Quick Start
 
 ```bash
-git clone https://github.com/sakhileb/Dot.Forms.git && cd Dot.Forms
-composer install && npm install
-cp .env.example .env && php artisan key:generate
-php artisan migrate && npm run dev & php artisan serve
+git clone https://github.com/sakhileb/Dot.Forms.git
+cd Dot.Forms
+cp .env.example .env
+composer install
+npm install && npm run build
+php artisan key:generate
+php artisan migrate
+php artisan serve
 ```
 
-```bash
-bash bin/test.sh   # Run tests
-```
+> **Ecosystem SSO:** Set `DB_*` env vars to the shared InfoDot PostgreSQL instance and `APP_URL=https://forms.infodot.app`. Users authenticated through InfoDot gain access automatically via Sanctum handoff tokens.
 
----
+## Ecosystem
 
-## Part of the Dot Ecosystem
+**Dot.Forms** is one of **21 platforms** in the InfoDot ecosystem, connected via shared PostgreSQL and Sanctum SSO. Visit [InfoDot](https://github.com/sakhileb/InfoDot) to explore the full platform map.
 
-Dot.Forms connects to [InfoDot](https://github.com/sakhileb/InfoDot) — the central hub. Log in to InfoDot once and navigate here without re-authenticating via `/auth/ecosystem`.
+## License
 
----
-
-MIT — © SK Digital / BluPin Incorporated
+MIT © [SK Digital / BluPin Incorporated](https://github.com/sakhileb)
