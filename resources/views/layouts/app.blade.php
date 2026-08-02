@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Dot.Forms</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
@@ -81,7 +84,7 @@
     <aside class="sidebar">
         <div class="sidebar-brand">
             <div class="brand-icon">
-                <span class="material-symbols-rounded">edit_document</span>
+                <img src="{{ asset('images/dot_forms.png') }}" alt="Dot Forms" style="width: 22px; height: 22px; object-fit: contain; border-radius: 5px;">
             </div>
             <div>
                 <div class="brand-name">Dot.Forms</div>
