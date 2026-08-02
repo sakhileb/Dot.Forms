@@ -1,6 +1,6 @@
 ---
 title: Dot.Forms — Platform Wiki
-version: 0.2.0
+version: 0.3.0
 status: draft
 owners: [Forms Platform Lead]
 platform-id: dot-forms
@@ -159,5 +159,6 @@ Given that `form_submissions.data` can contain PII the form owner collected from
 
 | Version | Date | Author | Change |
 |---|---|---|---|
+| 0.3.0 | 2026-08-02 | Sakhile Bhayi | **Real execution, twice.** First run against a real PHP/Postgres toolchain found `create_form_fields_table` and `create_forms_table` shared an identical migration timestamp, and Laravel's alphabetical tiebreak ran the FK-dependent one first — fixed by renaming `create_forms_table` a second earlier (would have fatally broken any fresh `php artisan migrate`). Second: found the six shared Jetstream-core migrations collide when a second platform migrates against the same real `infodot` database (Dot.Billing's `two_factor_secret` column already existed) — guarded all six with `Schema::hasTable`/`hasColumn` checks per Dot.Brain ADR-0013, then verified by running Dot.Billing → Dot.Forms → Dot.Tutor's migrations back-to-back against one database with zero errors. |
 | 0.2.0 | 2026-08-02 | Forms Platform Lead | Second pass: closed the SSRF gap flagged in 0.1.0 — `App\Support\SsrfGuard` rejects webhook/CRM URLs that resolve to loopback/private/link-local addresses (incl. the cloud metadata endpoint), enforced at both settings-save time (`App\Rules\SafeWebhookUrl`) and dispatch time (`FormSubmissionIntegrationDispatcher`, which also now disables redirect-following). No other changes this pass. |
 | 0.1.0 | 2026-08-02 | Forms Platform Lead | Initial platform-owned wiki, derived from the actual Laravel codebase (models, migrations, routes, Livewire components, policies). Verified the `EcosystemAuthController` SSO contract matches the ecosystem pattern exactly. Fixed `.env.example` `DB_DATABASE` (was commented out/defaulting to `laravel`, now `infodot`). Completed favicon/logo wiring across both parallel layout systems (`sips`-generated `apple-touch-icon.png`, `favicon-32x32.png`, `favicon-16x16.png`; replaced a generic Material Symbols brand icon in the legacy sidebar layout with the real `dot_forms.png` mark). Ran a focused IDOR/cross-tenant-access security scan on form/submission access — found the codebase already properly scoped everywhere checked, so no authorization code was changed; two lower-priority findings (webhook SSRF surface, non-exhaustive custom-CSS sanitizer) were flagged rather than fixed inline, per the bounded-pass rule. Corrected README's inaccurate Laravel 12 / Anthropic Claude / Reverb / Scout+Meilisearch / Redis+Horizon claims to match what's actually in `composer.json` and `app/`. |
