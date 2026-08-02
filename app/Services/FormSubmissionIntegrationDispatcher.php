@@ -5,7 +5,9 @@ namespace App\Services;
 use App\Services\Ai\AiCrmFieldMapper;
 use App\Models\Form;
 use App\Models\FormSubmission;
+use App\Support\SsrfGuard;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class FormSubmissionIntegrationDispatcher
@@ -50,8 +52,23 @@ class FormSubmissionIntegrationDispatcher
         ];
 
         foreach ($targets as $url) {
+            $url = (string) $url;
+
+            // Re-checked here, not just at settings-save time: DNS for a
+            // saved hostname can change between save and dispatch (a classic
+            // SSRF bypass via DNS rebinding), so a URL that was safe when a
+            // team configured it must still be safe right before we use it.
+            if (! SsrfGuard::isSafeUrl($url)) {
+                Log::warning('Form webhook dispatch blocked: target resolves to a non-public address', [
+                    'form_id' => $form->id,
+                    'url' => $url,
+                ]);
+
+                continue;
+            }
+
             try {
-                Http::timeout(8)->post((string) $url, $payload);
+                Http::timeout(8)->withOptions(['allow_redirects' => false])->post($url, $payload);
             } catch (Throwable $exception) {
                 report($exception);
             }

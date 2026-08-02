@@ -1,6 +1,6 @@
 ---
 title: Dot.Forms — Platform Wiki
-version: 0.1.0
+version: 0.2.0
 status: draft
 owners: [Forms Platform Lead]
 platform-id: dot-forms
@@ -107,8 +107,10 @@ The bounded, single-focus scan for this pass targeted the ecosystem's most commo
 
 This is a materially stronger starting position than the "single most common bug" framing in the task brief assumed — it did not apply here. No authorization code was changed.
 
+**Fixed this pass (2026-08-02):**
+- The webhook/CRM SSRF gap flagged below is closed. `App\Support\SsrfGuard::isSafeUrl()` rejects any URL whose scheme isn't `http`/`https`, whose host is `localhost`, or that resolves (directly or via DNS) to a loopback, private (RFC1918), link-local (including the `169.254.169.254` cloud metadata endpoint), or otherwise reserved IP — using PHP's built-in `FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE`, not a hand-rolled range list. It's enforced twice: `App\Rules\SafeWebhookUrl` at `Builder::persist()` validation time (rejects bad URLs before they're ever saved), and again in `FormSubmissionIntegrationDispatcher::dispatch()` immediately before each outbound request (defends against DNS rebinding — a hostname that resolved safely at save time can resolve differently by dispatch time). Redirect-following is also disabled on the outbound `Http::post()` call, closing the redirect-based SSRF bypass a resolved-safe URL could otherwise still enable.
+
 **Flagged, not fixed (out of scope for this bounded pass):**
-- `FormSubmissionIntegrationDispatcher` performs outbound `Http::post()` calls to team-configured webhook/CRM URLs (`webhook_url`, `slack_webhook_url`, `zapier_webhook_url`, `make_webhook_url`, `crm_webhook_url`) with no URL validation beyond Laravel's `url` validation rule in `Builder::persist()`. Any team member with `canEditForm` can point these at an internal/private address (SSRF surface). Fixing this properly needs an allow-list or DNS-resolution check policy decision, which is broader than a bounded pass should make inline — logged here for a dedicated follow-up.
 - `Builder::sanitizeCustomCss()` strips tags, `@import`, `expression()`, and `javascript:` from team-supplied custom CSS before it's presumably rendered somewhere for the public form theme. This is a reasonable but non-exhaustive CSS sanitizer (e.g. no defense against CSS exfiltration via `url()`-based attribute selectors). Not fixed inline — flagged for a dedicated CSS-sanitization review if custom CSS rendering expands.
 
 ## 7. Domain Entities
@@ -148,7 +150,7 @@ Given that `form_submissions.data` can contain PII the form owner collected from
 - [ ] Decide whether to consolidate the two parallel Blade layout systems (§2.1) or keep both — flagged, not touched, in this pass
 - [ ] Real-time collaborative editing: either install `laravel/reverb` and wire actual broadcasting, or stop implying real-time presence beyond the current Cache+polling mechanism in user-facing copy
 - [ ] Domain events for form publish/submission/close (prerequisite for any Knowledge Pack publishing)
-- [ ] SSRF hardening for team-configured webhook/CRM URLs in `FormSubmissionIntegrationDispatcher` (flagged in §6, not fixed)
+- [x] ~~SSRF hardening for team-configured webhook/CRM URLs in `FormSubmissionIntegrationDispatcher`~~ — fixed 2026-08-02, see §6
 - [ ] Decide on the actual AI provider story: keep OpenAI + heuristic fallback as-is, or move to a shared ecosystem Anthropic client if/when one exists (the old README's Claude claim was aspirational/incorrect and has been corrected in docs, not in code)
 - [ ] Aggregation-floor enforcement before any outward-facing Knowledge Pack publishing begins
 - [ ] `tasklist.md` at the repo root marks nearly everything as done (`[x]`), including items this pass could not verify are true given the Reverb/Scout/Horizon gaps found — treat that file as an intent record, not a status record
@@ -157,4 +159,5 @@ Given that `form_submissions.data` can contain PII the form owner collected from
 
 | Version | Date | Author | Change |
 |---|---|---|---|
+| 0.2.0 | 2026-08-02 | Forms Platform Lead | Second pass: closed the SSRF gap flagged in 0.1.0 — `App\Support\SsrfGuard` rejects webhook/CRM URLs that resolve to loopback/private/link-local addresses (incl. the cloud metadata endpoint), enforced at both settings-save time (`App\Rules\SafeWebhookUrl`) and dispatch time (`FormSubmissionIntegrationDispatcher`, which also now disables redirect-following). No other changes this pass. |
 | 0.1.0 | 2026-08-02 | Forms Platform Lead | Initial platform-owned wiki, derived from the actual Laravel codebase (models, migrations, routes, Livewire components, policies). Verified the `EcosystemAuthController` SSO contract matches the ecosystem pattern exactly. Fixed `.env.example` `DB_DATABASE` (was commented out/defaulting to `laravel`, now `infodot`). Completed favicon/logo wiring across both parallel layout systems (`sips`-generated `apple-touch-icon.png`, `favicon-32x32.png`, `favicon-16x16.png`; replaced a generic Material Symbols brand icon in the legacy sidebar layout with the real `dot_forms.png` mark). Ran a focused IDOR/cross-tenant-access security scan on form/submission access — found the codebase already properly scoped everywhere checked, so no authorization code was changed; two lower-priority findings (webhook SSRF surface, non-exhaustive custom-CSS sanitizer) were flagged rather than fixed inline, per the bounded-pass rule. Corrected README's inaccurate Laravel 12 / Anthropic Claude / Reverb / Scout+Meilisearch / Redis+Horizon claims to match what's actually in `composer.json` and `app/`. |

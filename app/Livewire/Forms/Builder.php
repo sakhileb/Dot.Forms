@@ -6,6 +6,7 @@ use App\Models\Form;
 use App\Models\FormUserRole;
 use App\Models\FormVersion;
 use App\Models\Team;
+use App\Rules\SafeWebhookUrl;
 use App\Services\Ai\AiFieldSuggestionEngine;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -317,10 +318,10 @@ class Builder extends Component
             'settings.limit_responses' => ['nullable', 'integer', 'min:1'],
             'settings.open_at' => ['nullable', 'date'],
             'settings.close_at' => ['nullable', 'date', 'after_or_equal:settings.open_at'],
-            'settings.webhook_url' => ['nullable', 'url', 'max:2048'],
-            'settings.slack_webhook_url' => ['nullable', 'url', 'max:2048'],
-            'settings.zapier_webhook_url' => ['nullable', 'url', 'max:2048'],
-            'settings.make_webhook_url' => ['nullable', 'url', 'max:2048'],
+            'settings.webhook_url' => ['nullable', 'url', 'max:2048', new SafeWebhookUrl()],
+            'settings.slack_webhook_url' => ['nullable', 'url', 'max:2048', new SafeWebhookUrl()],
+            'settings.zapier_webhook_url' => ['nullable', 'url', 'max:2048', new SafeWebhookUrl()],
+            'settings.make_webhook_url' => ['nullable', 'url', 'max:2048', new SafeWebhookUrl()],
             'settings.theme' => ['nullable', 'in:light,dark,brand'],
             'settings.brand_color' => ['nullable', 'regex:/^#?[0-9A-Fa-f]{6}$/'],
             'settings.custom_css' => ['nullable', 'string', 'max:8000'],
@@ -331,7 +332,7 @@ class Builder extends Component
             'settings.quiz_answer_key_json' => ['nullable', 'string', 'max:10000'],
             'settings.conversational_mode' => ['boolean'],
             'settings.crm_provider' => ['nullable', 'in:none,hubspot,pipedrive,generic'],
-            'settings.crm_webhook_url' => ['nullable', 'url', 'max:2048'],
+            'settings.crm_webhook_url' => ['nullable', 'url', 'max:2048', new SafeWebhookUrl()],
             'fields' => ['array'],
             'fields.*.type' => ['required', 'string'],
             'fields.*.label' => ['required', 'string', 'max:255'],
