@@ -34,27 +34,31 @@
                 min-height: 100vh;
             }
             .hero-bg {
-                background: linear-gradient(135deg, #fff9e6 0%, #ffffff 50%, #fff0f0 100%);
+                background: #ffffff;
                 position: relative;
                 overflow: hidden;
             }
-            .hero-bg::before {
-                content: '';
+            .hero-photo {
                 position: absolute;
-                top: -120px; right: -120px;
-                width: 500px; height: 500px;
-                background: radial-gradient(circle, rgba(245,184,0,0.18) 0%, transparent 70%);
-                border-radius: 50%;
-                pointer-events: none;
+                inset: 0;
+                background-size: cover;
+                background-position: center 30%;
             }
-            .hero-bg::after {
-                content: '';
+            .hero-photo-overlay {
                 position: absolute;
-                bottom: -80px; left: -80px;
-                width: 380px; height: 380px;
-                background: radial-gradient(circle, rgba(211,47,47,0.10) 0%, transparent 70%);
-                border-radius: 50%;
-                pointer-events: none;
+                inset: 0;
+                background: linear-gradient(90deg, rgba(255,255,255,.97) 0%, rgba(255,255,255,.94) 38%, rgba(255,255,255,.72) 68%, rgba(255,255,255,.55) 100%);
+            }
+            .cta-photo {
+                position: absolute;
+                inset: 0;
+                background-size: cover;
+                background-position: center;
+            }
+            .cta-photo-overlay {
+                position: absolute;
+                inset: 0;
+                background: linear-gradient(135deg, rgba(245,184,0,.90) 0%, rgba(249,115,22,.88) 100%);
             }
             .display { font-family: 'Sora', sans-serif; }
             .badge {
@@ -139,7 +143,10 @@
 
         {{-- ── HERO ── --}}
         <section class="hero-bg" style="padding: 80px 24px 96px;">
-            <div style="max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center;">
+            <!-- Photographic Background: real hand-writing-with-fountain-pen-on-paper photo by Shutter Speed (@shutter_speed_), unsplash.com/photos/rz_0EzMAmis -->
+            <div class="hero-photo" style="background-image: url('https://images.unsplash.com/photo-1764106813759-9ef7bf42a0af?q=80&amp;w=2400&amp;auto=format&amp;fit=crop');"></div>
+            <div class="hero-photo-overlay"></div>
+            <div style="max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; position: relative; z-index: 1;">
                 <div class="fade-up">
                     <div class="badge" style="margin-bottom: 24px;">
                         <span class="badge-dot"></span>
@@ -280,8 +287,11 @@
         </section>
 
         {{-- ── CTA BAND ── --}}
-        <section style="background: linear-gradient(135deg, var(--yellow) 0%, #F97316 100%); padding: 80px 24px;">
-            <div style="max-width: 640px; margin: 0 auto; text-align: center;">
+        <section style="position: relative; overflow: hidden; padding: 80px 24px;">
+            <!-- Photographic Background: real clipboard-checklist-with-coffee photo by Testeur de CBD (@testeurdecbd), unsplash.com/photos/UFb4LPahwHQ -->
+            <div class="cta-photo" style="background-image: url('https://images.unsplash.com/photo-1642188537432-41c8a331ebdb?q=80&amp;w=2400&amp;auto=format&amp;fit=crop');"></div>
+            <div class="cta-photo-overlay"></div>
+            <div style="max-width: 640px; margin: 0 auto; text-align: center; position: relative; z-index: 1;">
                 <h2 class="display" style="font-size: clamp(1.8rem, 3.5vw, 2.8rem); color: #1A1A1A; margin: 0 0 18px;">Ready to build your first form?</h2>
                 <p style="font-size: 17px; color: rgba(0,0,0,.65); margin: 0 0 32px; line-height: 1.7;">Join teams already using Dot Forms to capture better data, faster.</p>
                 <a href="{{ Route::has('register') ? route('register') : route('login') }}" style="display: inline-flex; align-items: center; gap: 8px; background: #1A1A1A; color: white; font-weight: 700; font-size: 16px; padding: 15px 36px; border-radius: 14px; text-decoration: none; transition: background .15s; box-shadow: 0 8px 24px rgba(0,0,0,.2);">
