@@ -160,7 +160,9 @@ class AiBuilder extends Component
         $slug = $base;
         $counter = 1;
 
-        while (Form::query()->where('slug', $slug)->exists()) {
+        // slugs are unique across all teams (see forms table migration), so
+        // this check must bypass Form's per-team scope.
+        while (Form::withoutTeamScope()->where('slug', $slug)->exists()) {
             $slug = $base.'-'.$counter;
             $counter++;
         }

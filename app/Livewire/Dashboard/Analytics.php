@@ -30,8 +30,9 @@ class Analytics extends Component
 
         abort_unless($team, 403);
 
+        // team_id filtering is now handled by Form's HasTeamScope global
+        // scope (scoped to Auth::user()->currentTeam, which is $team here).
         $forms = Form::query()
-            ->where('team_id', $team->id)
             ->withCount('submissions')
             ->get();
 

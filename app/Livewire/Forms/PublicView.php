@@ -46,7 +46,11 @@ class PublicView extends Component
         $cacheKey = 'form:public:'.$slug.':'.($preview ? 'preview' : 'live');
 
         $this->form = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($preview, $slug) {
-            $query = Form::query()->where('slug', $slug)->whereNull('archived_at');
+            // Public/preview lookups must resolve by slug regardless of the
+            // viewer's own current team (an authenticated team member may be
+            // viewing another team's published form, or previewing while a
+            // different team is "current"), so bypass Form's team scope here.
+            $query = Form::withoutTeamScope()->where('slug', $slug)->whereNull('archived_at');
 
             if (! $preview) {
                 $query->where('is_published', true);
