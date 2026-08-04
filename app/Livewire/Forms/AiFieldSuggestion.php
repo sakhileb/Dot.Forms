@@ -29,7 +29,7 @@ class AiFieldSuggestion extends Component
         Gate::authorize('view', $team);
         Gate::authorize('canEditForm', $team);
 
-        abort_unless((int) $form->team_id === (int) $team->id, 404);
+        $form->assertBelongsToTeam($team);
 
         $this->team = $team;
         $this->form = $form->load('fields');

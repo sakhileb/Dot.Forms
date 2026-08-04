@@ -27,7 +27,7 @@ class AiAnalytics extends Component
         Gate::authorize('view', $team);
         Gate::authorize('canViewSubmissions', $team);
 
-        abort_unless((int) $form->team_id === (int) $team->id, 404);
+        $form->assertBelongsToTeam($team);
 
         $this->team = $team;
         $this->form = $form->load('fields');

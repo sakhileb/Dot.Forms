@@ -101,6 +101,24 @@ class Form extends Model
         return $this->hasMany(FormVersion::class);
     }
 
+    /**
+     * Guard against a form/team mismatch in route parameters. Every
+     * Livewire component bound as Component::mount(Team $team, Form $form)
+     * relies on Laravel's implicit route-model binding to resolve $form
+     * independently of $team, so a URL like
+     * /teams/{other-team}/forms/{form-belonging-to-a-different-team}/...
+     * would otherwise resolve both models successfully and only leak data
+     * if nobody checks that $form actually belongs to $team. This was
+     * previously duplicated ad-hoc as
+     * `abort_unless((int) $form->team_id === (int) $team->id, 404)` in
+     * Builder, Submissions, AiFieldSuggestion and AiAnalytics -- centralized
+     * here so future mount() methods can't forget the check.
+     */
+    public function assertBelongsToTeam(Team $team): void
+    {
+        abort_unless((int) $this->team_id === (int) $team->id, 404);
+    }
+
     public function editableBy(User $user): bool
     {
         if ((int) $this->user_id === (int) $user->id || $user->ownsTeam($this->team)) {

@@ -45,7 +45,7 @@ class Submissions extends Component
     {
         Gate::authorize('view', $team);
 
-        abort_unless((int) $form->team_id === (int) $team->id, 404);
+        $form->assertBelongsToTeam($team);
 
         $user = Auth::user();
 
