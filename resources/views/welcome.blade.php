@@ -1,314 +1,345 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>{{ config('app.name', 'Dot Forms') }} — Build forms that work</title>
-        
+        <title>Dot.Forms — Form builder for teams</title>
+        <meta name="description" content="A team-scoped form builder: drag-style field editor, one public link per form, and a submissions table you can search, export, and route to Slack or your CRM the moment a response comes in.">
+
         <!-- Favicon -->
         <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
         <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}">
         <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
-        
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+
         <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@700;800&display=swap" rel="stylesheet">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
+
         <style>
-            *, *::before, *::after { box-sizing: border-box; }
             :root {
-                --yellow: #F5B800;
-                --yellow-dark: #C9950A;
-                --yellow-light: #FFF4C2;
-                --red: #D32F2F;
-                --red-light: #FFEBEB;
-                --ink: #1A1A1A;
-                --muted: #6B7280;
-                --surface: #FFFFFF;
-                --bg: #FAFAFA;
+                --paper: #fbf6ea;
+                --paper-deep: #f1e7cd;
+                --ink: #221b12;
+                --ink-soft: #5b5240;
+                --gold: #f1c62e;
+                --gold-deep: #a97b0f;
+                --red: #d2232a;
+                --red-deep: #a81b21;
+                --line: rgba(34, 27, 18, 0.12);
+                --font-display: 'Fraunces', Georgia, serif;
+                --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+                --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+                --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
             }
-            body {
-                font-family: 'Inter', sans-serif;
-                background-color: var(--bg);
-                color: var(--ink);
-                margin: 0;
-                min-height: 100vh;
+            html { background: var(--paper); }
+            body { font-family: var(--font-body); background: var(--paper); color: var(--ink); }
+            .font-display { font-family: var(--font-display); font-optical-sizing: auto; }
+            .font-mono { font-family: var(--font-mono); }
+
+            .press { transition: transform 160ms var(--ease-out); }
+            .press:active { transform: scale(0.97); }
+
+            @media (prefers-reduced-motion: no-preference) {
+                .reveal {
+                    opacity: 0;
+                    transform: translateY(14px);
+                    transition: opacity 600ms var(--ease-out), transform 600ms var(--ease-out);
+                }
+                .reveal.is-visible { opacity: 1; transform: translateY(0); }
             }
-            .hero-bg {
-                background: #ffffff;
-                position: relative;
-                overflow: hidden;
+            @media (prefers-reduced-motion: reduce) {
+                .reveal { opacity: 1; transform: none; }
             }
-            .hero-photo {
-                position: absolute;
-                inset: 0;
-                background-size: cover;
-                background-position: center 30%;
+
+            @media (hover: hover) and (pointer: fine) {
+                .row-hover:hover { background: rgba(34, 27, 18, 0.025); }
+                .link-underline { background-size: 0% 1px; }
+                .link-underline:hover { background-size: 100% 1px; }
             }
-            .hero-photo-overlay {
-                position: absolute;
-                inset: 0;
-                background: linear-gradient(90deg, rgba(255,255,255,.97) 0%, rgba(255,255,255,.94) 38%, rgba(255,255,255,.72) 68%, rgba(255,255,255,.55) 100%);
+            .link-underline {
+                background-image: linear-gradient(currentColor, currentColor);
+                background-position: 0 100%;
+                background-repeat: no-repeat;
+                transition: background-size 220ms var(--ease-out);
             }
-            .cta-photo {
-                position: absolute;
-                inset: 0;
-                background-size: cover;
-                background-position: center;
-            }
-            .cta-photo-overlay {
-                position: absolute;
-                inset: 0;
-                background: linear-gradient(135deg, rgba(245,184,0,.90) 0%, rgba(249,115,22,.88) 100%);
-            }
-            .display { font-family: 'Sora', sans-serif; }
-            .badge {
-                display: inline-flex; align-items: center; gap: 6px;
-                background: var(--yellow-light); color: var(--yellow-dark);
-                font-size: 12px; font-weight: 600; letter-spacing: .06em;
-                text-transform: uppercase; padding: 5px 14px; border-radius: 999px;
-                border: 1px solid rgba(245,184,0,.35);
-            }
-            .badge-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--yellow-dark); }
-            .btn-primary {
-                display: inline-flex; align-items: center; gap: 8px;
-                background: var(--yellow); color: #1A1A1A;
-                font-weight: 700; font-size: 15px;
-                padding: 13px 28px; border-radius: 12px; border: none;
-                text-decoration: none; cursor: pointer;
-                transition: background .15s, transform .1s, box-shadow .15s;
-                box-shadow: 0 4px 14px rgba(245,184,0,.4);
-            }
-            .btn-primary:hover { background: var(--yellow-dark); box-shadow: 0 6px 20px rgba(245,184,0,.5); transform: translateY(-1px); }
-            .btn-secondary {
-                display: inline-flex; align-items: center; gap: 8px;
-                background: white; color: var(--ink);
-                font-weight: 600; font-size: 15px;
-                padding: 13px 28px; border-radius: 12px;
-                border: 1.5px solid #E5E7EB; text-decoration: none;
-                transition: border-color .15s, background .15s;
-            }
-            .btn-secondary:hover { border-color: var(--yellow); background: var(--yellow-light); }
-            .card {
-                background: white; border-radius: 20px;
-                border: 1px solid #F0F0F0;
-                box-shadow: 0 2px 12px rgba(0,0,0,.06);
-                padding: 28px;
-            }
-            .stat-number { font-family: 'Sora', sans-serif; font-size: 2.4rem; font-weight: 800; }
-            .feature-icon {
-                width: 52px; height: 52px; border-radius: 14px;
-                display: flex; align-items: center; justify-content: center;
-                font-size: 22px; margin-bottom: 14px;
-            }
-            .nav-link {
-                font-size: 14px; font-weight: 500; color: #374151;
-                text-decoration: none; padding: 8px 16px; border-radius: 8px;
-                transition: background .12s, color .12s;
-            }
-            .nav-link:hover { background: #F3F4F6; color: #111; }
-            .pill { display: inline-block; padding: 3px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; }
-            @keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
-            .fade-up { animation: fadeUp .6s ease both; }
-            .fade-up-delay { animation: fadeUp .8s ease .15s both; }
-            .fade-up-delay2 { animation: fadeUp .8s ease .3s both; }
+
+            #mobile-menu[data-open="false"] { display: none; }
         </style>
     </head>
-    <body>
+    <body class="antialiased">
 
-        {{-- ── NAVBAR ── --}}
-        <header style="background: rgba(255,255,255,.92); backdrop-filter: blur(12px); border-bottom: 1px solid #F0F0F0; position: sticky; top: 0; z-index: 50;">
-            <div style="max-width: 1200px; margin: 0 auto; padding: 0 24px; height: 64px; display: flex; align-items: center; justify-content: space-between;">
-                <a href="{{ url('/') }}" style="display: flex; align-items: center; gap: 10px; text-decoration: none;">
-                    <img src="{{ asset('images/dot_forms.png') }}" alt="Dot Forms" style="height: 38px; width: 38px; object-fit: contain;">
-                    <span style="font-family: 'Sora', sans-serif; font-size: 18px; font-weight: 800; color: #1A1A1A; letter-spacing: -.01em;">dot<span style="color: var(--red);">.</span>forms</span>
+        <!-- Nav -->
+        <header id="site-header" class="fixed top-0 left-0 right-0 z-50 border-b border-transparent transition-colors duration-300">
+            <nav class="max-w-[1400px] mx-auto px-5 sm:px-8 py-2.5 flex items-center justify-between">
+                <a href="/" class="flex items-center press">
+                    <img src="{{ asset('images/dot_forms.png') }}" alt="Dot.Forms" class="h-16 sm:h-20 w-auto">
                 </a>
 
-                <nav style="display: flex; align-items: center; gap: 4px;">
-                    @if (Route::has('login'))
+                <div class="hidden md:flex items-center gap-8 font-mono text-[13px] tracking-wide uppercase text-[var(--ink-soft)]">
+                    <a href="#features" class="link-underline hover:text-[var(--ink)] pb-0.5">What it does</a>
+                    <a href="#capabilities" class="link-underline hover:text-[var(--ink)] pb-0.5">For teams</a>
+                </div>
+
+                @if (Route::has('login'))
+                    <div class="flex items-center gap-3">
                         @auth
-                            <a href="{{ url('/dashboard') }}" class="nav-link">Dashboard</a>
+                            <a href="{{ url('/dashboard') }}" class="press px-5 py-2.5 bg-[var(--ink)] hover:bg-[#332818] text-[var(--paper)] text-sm font-display font-semibold rounded-lg transition-colors">
+                                Dashboard
+                            </a>
                         @else
-                            <a href="{{ route('login') }}" class="nav-link">Sign in</a>
+                            <a href="{{ route('login') }}" class="hidden sm:block text-sm font-medium text-[var(--ink-soft)] hover:text-[var(--ink)] transition-colors">
+                                Sign in
+                            </a>
                             @if (Route::has('register'))
-                                <a href="{{ route('register') }}" class="btn-primary" style="padding: 9px 22px; font-size: 14px;">
-                                    Get started free
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                                <a href="{{ route('register') }}" class="press px-5 py-2.5 bg-[var(--gold)] hover:bg-[#f5d364] text-[var(--ink)] text-sm font-display font-semibold rounded-lg transition-colors">
+                                    Create account
                                 </a>
                             @endif
                         @endauth
-                    @endif
-                </nav>
+
+                        <button id="mobile-menu-toggle" class="md:hidden press p-2 -mr-2 text-[var(--ink)]" aria-label="Toggle menu" aria-expanded="false" aria-controls="mobile-menu">
+                            <svg id="icon-open" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M4 7h16M4 12h16M4 17h16"></path>
+                            </svg>
+                            <svg id="icon-close" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                @endif
+            </nav>
+
+            <div id="mobile-menu" data-open="false" class="md:hidden border-t border-[var(--line)] bg-[var(--paper)]">
+                <div class="flex flex-col px-5 py-4 gap-1 font-mono text-sm uppercase tracking-wide">
+                    <a href="#features" class="px-3 py-2.5 text-[var(--ink-soft)] hover:text-[var(--ink)]">What it does</a>
+                    <a href="#capabilities" class="px-3 py-2.5 text-[var(--ink-soft)] hover:text-[var(--ink)]">For teams</a>
+                    @guest
+                        <a href="{{ route('login') }}" class="px-3 py-2.5 text-[var(--ink-soft)] hover:text-[var(--ink)]">Sign in</a>
+                    @endguest
+                </div>
             </div>
         </header>
 
-        {{-- ── HERO ── --}}
-        <section class="hero-bg" style="padding: 80px 24px 96px;">
-            <!-- Photographic Background: real hand-writing-with-fountain-pen-on-paper photo by Shutter Speed (@shutter_speed_), unsplash.com/photos/rz_0EzMAmis -->
-            <div class="hero-photo" style="background-image: url('https://images.unsplash.com/photo-1764106813759-9ef7bf42a0af?q=80&amp;w=2400&amp;auto=format&amp;fit=crop');"></div>
-            <div class="hero-photo-overlay"></div>
-            <div style="max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; position: relative; z-index: 1;">
-                <div class="fade-up">
-                    <div class="badge" style="margin-bottom: 24px;">
-                        <span class="badge-dot"></span>
-                        AI-powered form builder
-                    </div>
-                    <h1 class="display" style="font-size: clamp(2rem, 4vw, 3.5rem); line-height: 1.1; margin: 0 0 24px; color: #1A1A1A;">
-                        Build smarter forms<br>
-                        <span style="color: var(--red);">in minutes,</span>
-                        <span style="color: var(--yellow-dark);"> not hours.</span>
-                    </h1>
-                    <p style="font-size: 18px; line-height: 1.7; color: #4B5563; margin: 0 0 36px; max-width: 480px;">
-                        Dot Forms combines a no-code builder with AI assistance, analytics, and team collaboration — so your forms convert, not just collect.
-                    </p>
-                    <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
-                        <a href="{{ Route::has('register') ? route('register') : route('login') }}" class="btn-primary">
-                            Start for free
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                        </a>
-                        <a href="{{ route('login') }}" class="btn-secondary">Sign in to workspace</a>
-                    </div>
-                    <p style="margin-top: 20px; font-size: 13px; color: #9CA3AF;">No credit card required &nbsp;·&nbsp; Free tier available</p>
-                </div>
+        <!-- Hero -->
+        <section class="relative overflow-hidden pt-32 pb-20 sm:pt-40 sm:pb-24 px-5 sm:px-8">
+            <div class="max-w-[1400px] mx-auto">
+                <div class="grid lg:grid-cols-[1.15fr_0.85fr] gap-14 lg:gap-16 items-center">
+                    <div class="reveal" data-reveal>
+                        <p class="font-mono text-xs tracking-[0.18em] uppercase text-[var(--red)] mb-6">
+                            Form builder for teams
+                        </p>
 
-                <div class="fade-up-delay" style="position: relative;">
-                    {{-- Mock form card --}}
-                    <div style="background: white; border-radius: 24px; box-shadow: 0 24px 60px rgba(0,0,0,.13); padding: 32px; border: 1px solid #F0F0F0;">
-                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 24px;">
-                            <img src="{{ asset('images/dot_forms.png') }}" alt="" style="height: 32px; width: 32px; object-fit: contain;">
-                            <span style="font-weight: 700; font-size: 15px; color: #1A1A1A;">Customer Feedback Form</span>
-                            <span class="pill" style="background: #DCFCE7; color: #15803D; margin-left: auto;">Live</span>
-                        </div>
-                        <div style="display: flex; flex-direction: column; gap: 14px;">
-                            <div>
-                                <div style="font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 5px;">Your name</div>
-                                <div style="height: 38px; background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 0 12px; display: flex; align-items: center;">
-                                    <span style="font-size: 13px; color: #9CA3AF;">e.g. Jane Smith</span>
-                                </div>
+                        <h1 class="font-display font-semibold text-4xl sm:text-5xl lg:text-6xl leading-[1.08] tracking-tight text-[var(--ink)] mb-6">
+                            Build the form.<br>Skip the spreadsheet.
+                        </h1>
+
+                        <p class="text-lg text-[var(--ink-soft)] leading-relaxed max-w-xl mb-10">
+                            Dot.Forms is a team-scoped form builder: a drag-style field editor, one public link per form, and a submissions table you can search, export, and route to Slack or your CRM the moment a response comes in.
+                        </p>
+
+                        @guest
+                            <div class="flex flex-wrap items-center gap-4">
+                                <a href="{{ route('register') }}" class="press px-7 py-3.5 bg-[var(--gold)] hover:bg-[#f5d364] text-[var(--ink)] font-display font-semibold rounded-lg transition-colors">
+                                    Create account
+                                </a>
+                                <a href="#features" class="press flex items-center gap-2 px-7 py-3.5 text-[var(--ink)] font-medium rounded-lg border border-[var(--line)] hover:border-[var(--ink-soft)] transition-colors">
+                                    See what it does
+                                </a>
                             </div>
-                            <div>
-                                <div style="font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 5px;">How would you rate us?</div>
-                                <div style="display: flex; gap: 8px;">
-                                    @foreach(['😠','😕','😐','😊','🤩'] as $i => $emoji)
-                                        @if($i === 4)
-                                            <div style="flex: 1; height: 40px; background: #FFF4C2; border: 1.5px solid #F5B800; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px;">{{ $emoji }}</div>
-                                        @else
-                                            <div style="flex: 1; height: 40px; background: #F9FAFB; border: 1.5px solid #E5E7EB; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px;">{{ $emoji }}</div>
-                                        @endif
-                                    @endforeach
-                                </div>
-                            </div>
-                            <div>
-                                <div style="font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 5px;">Comments</div>
-                                <div style="height: 64px; background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px;"></div>
-                            </div>
-                            <div style="background: var(--yellow); color: #1A1A1A; font-weight: 700; font-size: 14px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">Submit Response</div>
-                        </div>
+                        @endguest
                     </div>
-                    {{-- floating stat pills --}}
-                    <div style="position: absolute; top: -16px; right: -16px; background: white; border-radius: 12px; padding: 10px 16px; box-shadow: 0 8px 24px rgba(0,0,0,.12); display: flex; align-items: center; gap: 8px; border: 1px solid #F0F0F0;">
-                        <span style="font-size: 20px;">⚡</span>
-                        <div>
-                            <div style="font-size: 11px; color: #6B7280; font-weight: 600;">AI Gen</div>
-                            <div style="font-size: 14px; font-weight: 800; color: #1A1A1A;">2.3s</div>
-                        </div>
-                    </div>
-                    <div style="position: absolute; bottom: -16px; left: -16px; background: white; border-radius: 12px; padding: 10px 16px; box-shadow: 0 8px 24px rgba(0,0,0,.12); display: flex; align-items: center; gap: 8px; border: 1px solid #F0F0F0;">
-                        <span style="font-size: 20px;">📬</span>
-                        <div>
-                            <div style="font-size: 11px; color: #6B7280; font-weight: 600;">Submissions today</div>
-                            <div style="font-size: 14px; font-weight: 800; color: #1A1A1A;">247</div>
+
+                    <div class="hidden lg:block reveal" data-reveal>
+                        <div class="relative rounded-[28px] border border-[var(--line)] bg-[var(--paper-deep)] p-10 flex items-center justify-center">
+                            <!-- Signature element: line-art form/checklist, echoing the paper-and-checklist icon in the real Dot.Forms mark -->
+                            <svg class="w-full max-w-[220px] h-auto" viewBox="0 0 220 280" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <rect x="46" y="34" width="120" height="172" rx="6" stroke="var(--ink)" stroke-opacity="0.14" stroke-width="3"/>
+                                <path d="M24 12H130L158 40V226H24V12Z" stroke="var(--ink)" stroke-width="3"/>
+                                <path d="M130 12V40H158" stroke="var(--ink)" stroke-width="3"/>
+                                <line x1="44" y1="76" x2="138" y2="76" stroke="var(--ink)" stroke-width="2.5"/>
+                                <line x1="44" y1="96" x2="138" y2="96" stroke="var(--ink)" stroke-width="2.5"/>
+                                <line x1="44" y1="116" x2="112" y2="116" stroke="var(--ink)" stroke-width="2.5"/>
+                                <rect x="44" y="148" width="16" height="16" rx="3" stroke="var(--red)" stroke-width="3"/>
+                                <path d="M48 156L54 162L66 148" stroke="var(--red)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                                <line x1="70" y1="156" x2="138" y2="156" stroke="var(--ink)" stroke-width="2.5"/>
+                                <rect x="44" y="180" width="16" height="16" rx="3" stroke="var(--ink)" stroke-opacity="0.35" stroke-width="3"/>
+                                <line x1="70" y1="188" x2="126" y2="188" stroke="var(--ink)" stroke-width="2.5"/>
+                            </svg>
                         </div>
                     </div>
                 </div>
             </div>
-        </section>
 
-        {{-- ── STATS STRIP ── --}}
-        <section style="background: var(--ink); padding: 40px 24px;">
-            <div style="max-width: 900px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; text-align: center;">
-                <div style="padding: 0 24px; border-right: 1px solid rgba(255,255,255,.1);">
-                    <div class="display stat-number" style="color: var(--yellow);">10x</div>
-                    <p style="margin: 6px 0 0; font-size: 14px; color: #9CA3AF;">Faster than coding forms from scratch</p>
-                </div>
-                <div style="padding: 0 24px; border-right: 1px solid rgba(255,255,255,.1);">
-                    <div class="display stat-number" style="color: var(--yellow);">+34%</div>
-                    <p style="margin: 6px 0 0; font-size: 14px; color: #9CA3AF;">Completion rate on conversational flows</p>
-                </div>
-                <div style="padding: 0 24px;">
-                    <div class="display stat-number" style="color: var(--yellow);">24/7</div>
-                    <p style="margin: 6px 0 0; font-size: 14px; color: #9CA3AF;">Automated webhook + notification routing</p>
+            <!-- Capability strip — real functionality, not a fabricated metric -->
+            <div class="mt-16 sm:mt-20 border-t border-[var(--line)] pt-6">
+                <div class="max-w-[1400px] mx-auto flex flex-wrap gap-x-8 gap-y-2 font-mono text-[11px] tracking-[0.14em] uppercase text-[var(--ink-soft)]">
+                    <span>Field-by-field builder</span>
+                    <span class="text-[var(--red)]">·</span>
+                    <span>Version history &amp; revert</span>
+                    <span class="text-[var(--red)]">·</span>
+                    <span>Spam &amp; rate-limit protection</span>
+                    <span class="text-[var(--red)]">·</span>
+                    <span>CSV / XLSX export</span>
                 </div>
             </div>
         </section>
 
-        {{-- ── FEATURES ── --}}
-        <section style="padding: 96px 24px; background: var(--bg);">
-            <div style="max-width: 1200px; margin: 0 auto;">
-                <div style="text-align: center; margin-bottom: 56px;" class="fade-up">
-                    <h2 class="display" style="font-size: clamp(1.6rem, 3vw, 2.5rem); margin: 0 0 16px; color: #1A1A1A;">
-                        Everything your team needs
+        <!-- Features -->
+        <section id="features" class="py-24 sm:py-28 px-5 sm:px-8">
+            <div class="max-w-[1400px] mx-auto">
+                <div class="max-w-xl mb-16 reveal" data-reveal>
+                    <p class="font-mono text-xs tracking-[0.18em] uppercase text-[var(--red)] mb-4">What it does</p>
+                    <h2 class="font-display font-semibold text-3xl sm:text-4xl text-[var(--ink)] leading-tight">
+                        Everything a form needs to go from draft to data
                     </h2>
-                    <p style="font-size: 17px; color: #6B7280; max-width: 520px; margin: 0 auto; line-height: 1.7;">All tools in one place — from building to analysis.</p>
                 </div>
 
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;" class="fade-up-delay">
-                    <div class="card">
-                        <div class="feature-icon" style="background: var(--yellow-light);">🤖</div>
-                        <h3 style="font-size: 17px; font-weight: 700; margin: 0 0 10px;">AI Form Builder</h3>
-                        <p style="font-size: 14px; color: #6B7280; line-height: 1.65; margin: 0;">Describe your form in plain English and let AI generate the full structure, fields, and logic in seconds.</p>
+                <div class="grid md:grid-cols-2 border-t border-[var(--line)]">
+                    @php
+                        $features = [
+                            ['tag' => 'Builder', 'title' => 'Field-by-field form builder', 'body' => 'Draft, publish, archive, or duplicate a form; reorder fields with a drag-style editor; and revert to any earlier version with full history.'],
+                            ['tag' => 'Publishing', 'title' => 'One link, honestly protected', 'body' => "Each form renders at its own slug with honeypot and timing-based spam checks, rate limiting, and an optional consent checkbox or quiz score."],
+                            ['tag' => 'Submissions', 'title' => 'A submissions table you can search', 'body' => 'Search responses, export to CSV or XLSX, open any submission\'s full detail, bulk-delete, or pull a GDPR-style export for a single respondent.'],
+                            ['tag' => 'Routing', 'title' => 'Webhooks that actually fire', 'body' => 'Send new submissions to Slack, Zapier, Make, or a CRM over real HTTP calls the moment someone submits — guarded against SSRF on team-supplied URLs.'],
+                            ['tag' => 'AI assist', 'title' => 'A drafting assist, not a black box', 'body' => "Describe a form in plain language and get a starting structure. Calls OpenAI when a key is configured, and falls back to a real keyword-based builder — not a fake \"thinking\" animation — when it isn't."],
+                            ['tag' => 'Roles', 'title' => 'Collaborators, not just teammates', 'body' => "Give a form its own viewer, editor, or owner, layered on top of whoever's on the team — access follows the form, not just the workspace."],
+                        ];
+                    @endphp
+                    @foreach ($features as $i => $f)
+                        <div class="row-hover border-b border-[var(--line)] {{ $i % 2 === 0 ? 'md:border-r' : '' }} px-1 py-8 sm:py-10 transition-colors reveal" data-reveal>
+                            <p class="font-mono text-[11px] tracking-[0.14em] uppercase text-[var(--red)] mb-3">{{ $f['tag'] }}</p>
+                            <h3 class="font-display font-semibold text-xl text-[var(--ink)] mb-2.5">{{ $f['title'] }}</h3>
+                            <p class="text-[var(--ink-soft)] leading-relaxed max-w-md">{{ $f['body'] }}</p>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </section>
+
+        <!-- Capabilities -->
+        <section id="capabilities" class="py-24 sm:py-28 px-5 sm:px-8 bg-[var(--paper-deep)] border-y border-[var(--line)]">
+            <div class="max-w-[1400px] mx-auto">
+                <div class="grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-12 lg:gap-20">
+                    <div class="reveal" data-reveal>
+                        <p class="font-mono text-xs tracking-[0.18em] uppercase text-[var(--red)] mb-4">Built for the team</p>
+                        <h2 class="font-display font-semibold text-3xl sm:text-4xl text-[var(--ink)] leading-tight mb-5">
+                            Runs one workspace or a dozen forms, from a browser
+                        </h2>
+                        <p class="text-[var(--ink-soft)] leading-relaxed max-w-sm">
+                            No plugin to install and no separate reporting tool. Sign in, build a form, and everything else — submissions, exports, integrations — is already there.
+                        </p>
                     </div>
-                    <div class="card">
-                        <div class="feature-icon" style="background: #FFEBEB;">🎨</div>
-                        <h3 style="font-size: 17px; font-weight: 700; margin: 0 0 10px;">Drag-and-Drop Builder</h3>
-                        <p style="font-size: 14px; color: #6B7280; line-height: 1.65; margin: 0;">Reorder fields, set conditional logic, configure validation and theming all from a clean visual editor.</p>
-                    </div>
-                    <div class="card">
-                        <div class="feature-icon" style="background: #E0F2FE;">📊</div>
-                        <h3 style="font-size: 17px; font-weight: 700; margin: 0 0 10px;">Built-in Analytics</h3>
-                        <p style="font-size: 14px; color: #6B7280; line-height: 1.65; margin: 0;">Track views, completions, drop-off rates, and average completion time with interactive dashboards.</p>
-                    </div>
-                    <div class="card">
-                        <div class="feature-icon" style="background: #F0FDF4;">🔗</div>
-                        <h3 style="font-size: 17px; font-weight: 700; margin: 0 0 10px;">Webhooks & Integrations</h3>
-                        <p style="font-size: 14px; color: #6B7280; line-height: 1.65; margin: 0;">Push submissions to Slack, Zapier, Make, or any CRM via configurable webhooks — no code needed.</p>
-                    </div>
-                    <div class="card">
-                        <div class="feature-icon" style="background: #FFF7ED;">👥</div>
-                        <h3 style="font-size: 17px; font-weight: 700; margin: 0 0 10px;">Team Collaboration</h3>
-                        <p style="font-size: 14px; color: #6B7280; line-height: 1.65; margin: 0;">Invite teammates, assign roles, and see who's working on which form live with presence indicators.</p>
-                    </div>
-                    <div class="card">
-                        <div class="feature-icon" style="background: var(--yellow-light);">🔒</div>
-                        <h3 style="font-size: 17px; font-weight: 700; margin: 0 0 10px;">GDPR & Security</h3>
-                        <p style="font-size: 14px; color: #6B7280; line-height: 1.65; margin: 0;">Consent checkboxes, data retention rules, rate-limiting, honeypot protection and CSRF built in by default.</p>
+
+                    <div class="grid sm:grid-cols-2 gap-x-10">
+                        @php
+                            $capabilities = [
+                                ['title' => 'Team-scoped by default', 'body' => 'Every form belongs to a team; every builder, viewer, and export action is checked against that team before anything loads.'],
+                                ['title' => 'Submission analysis, plainly stated', 'body' => "Completion-rate drop-off by field and a real keyword-based sentiment pass — not an LLM guessing, a statistical read of your own data."],
+                                ['title' => 'Scheduled auto-close', 'body' => 'Forms with a configured close date stop taking new responses on schedule, no manual step required.'],
+                                ['title' => 'GDPR-style export', 'body' => "Pull every submission tied to one respondent's data on request, per form."],
+                                ['title' => 'Team-supplied form theming', 'body' => "Forms can carry their own custom CSS, sanitized before it renders on the public page."],
+                                ['title' => 'Every AI action logged', 'body' => 'Field suggestions, label rewrites, analysis runs, and generated blueprints are all recorded against the form they touched.'],
+                            ];
+                        @endphp
+                        @foreach ($capabilities as $c)
+                            <div class="py-6 border-t border-[var(--line)] reveal" data-reveal>
+                                <h3 class="font-display font-medium text-base text-[var(--ink)] mb-1.5">{{ $c['title'] }}</h3>
+                                <p class="text-sm text-[var(--ink-soft)] leading-relaxed">{{ $c['body'] }}</p>
+                            </div>
+                        @endforeach
                     </div>
                 </div>
             </div>
         </section>
 
-        {{-- ── CTA BAND ── --}}
-        <section style="position: relative; overflow: hidden; padding: 80px 24px;">
-            <!-- Photographic Background: real clipboard-checklist-with-coffee photo by Testeur de CBD (@testeurdecbd), unsplash.com/photos/UFb4LPahwHQ -->
-            <div class="cta-photo" style="background-image: url('https://images.unsplash.com/photo-1642188537432-41c8a331ebdb?q=80&amp;w=2400&amp;auto=format&amp;fit=crop');"></div>
-            <div class="cta-photo-overlay"></div>
-            <div style="max-width: 640px; margin: 0 auto; text-align: center; position: relative; z-index: 1;">
-                <h2 class="display" style="font-size: clamp(1.8rem, 3.5vw, 2.8rem); color: #1A1A1A; margin: 0 0 18px;">Ready to build your first form?</h2>
-                <p style="font-size: 17px; color: rgba(0,0,0,.65); margin: 0 0 32px; line-height: 1.7;">Join teams already using Dot Forms to capture better data, faster.</p>
-                <a href="{{ Route::has('register') ? route('register') : route('login') }}" style="display: inline-flex; align-items: center; gap: 8px; background: #1A1A1A; color: white; font-weight: 700; font-size: 16px; padding: 15px 36px; border-radius: 14px; text-decoration: none; transition: background .15s; box-shadow: 0 8px 24px rgba(0,0,0,.2);">
-                    Create free account
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        <!-- CTA -->
+        <section class="relative py-28 sm:py-36 px-5 sm:px-8 overflow-hidden">
+            <!-- Photo: clipboard checklist next to a cup of coffee, by Testeur de CBD (@testeurdecbd), unsplash.com/photos/UFb4LPahwHQ -->
+            <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1642188537432-41c8a331ebdb?q=80&w=2400&auto=format&fit=crop');"></div>
+            <div class="absolute inset-0" style="background: linear-gradient(180deg, var(--paper) 0%, rgba(251,246,234,0.86) 45%, var(--paper) 100%);"></div>
+
+            <div class="relative z-10 max-w-2xl mx-auto text-center reveal" data-reveal>
+                <h2 class="font-display font-semibold text-3xl sm:text-4xl text-[var(--ink)] leading-tight mb-5">
+                    Ready to publish your first form?
+                </h2>
+                <p class="text-[var(--ink-soft)] leading-relaxed mb-10 max-w-lg mx-auto">
+                    Build it, share the link, and watch responses land in a table you can search and export.
+                </p>
+
+                @guest
+                    <div class="flex flex-wrap justify-center gap-4">
+                        <a href="{{ route('register') }}" class="press px-8 py-3.5 bg-[var(--gold)] hover:bg-[#f5d364] text-[var(--ink)] font-display font-semibold rounded-lg transition-colors">
+                            Create account
+                        </a>
+                        <a href="{{ route('login') }}" class="press px-8 py-3.5 text-[var(--ink)] font-medium rounded-lg border border-[var(--line)] hover:border-[var(--ink-soft)] transition-colors">
+                            Sign in
+                        </a>
+                    </div>
+                @endguest
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="py-14 px-5 sm:px-8 border-t border-[var(--line)] bg-[var(--paper-deep)]">
+            <div class="max-w-[1400px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
+                <a href="/" class="flex items-center">
+                    <img src="{{ asset('images/dot_forms.png') }}" alt="Dot.Forms" class="h-11 w-auto opacity-90">
                 </a>
+                <p class="font-mono text-xs tracking-wide text-[var(--ink-soft)]">
+                    &copy; {{ date('Y') }} Dot.Forms. Form builder for teams.
+                </p>
             </div>
-        </section>
-
-        {{-- ── FOOTER ── --}}
-        <footer style="background: #111; color: #6B7280; padding: 32px 24px; text-align: center;">
-            <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 12px;">
-                <img src="{{ asset('images/dot_forms.png') }}" alt="Dot Forms" style="height: 28px; width: 28px; object-fit: contain; opacity: .75;">
-                <span style="font-family: 'Sora', sans-serif; font-size: 15px; font-weight: 700; color: #ccc;">dot<span style="color: var(--red);">.</span>forms</span>
-            </div>
-            <p style="margin: 0; font-size: 13px;">© {{ date('Y') }} Dot Forms. Built with Laravel & Livewire.</p>
         </footer>
 
+        <script>
+            // Scroll-reveal, respects prefers-reduced-motion
+            if (window.matchMedia('(prefers-reduced-motion: no-preference)').matches && 'IntersectionObserver' in window) {
+                const io = new IntersectionObserver((entries) => {
+                    entries.forEach((entry) => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('is-visible');
+                            io.unobserve(entry.target);
+                        }
+                    });
+                }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+                document.querySelectorAll('[data-reveal]').forEach((el) => io.observe(el));
+            } else {
+                document.querySelectorAll('[data-reveal]').forEach((el) => el.classList.add('is-visible'));
+            }
+
+            // Sticky header background on scroll (inline styles — avoids relying on a
+            // JIT-generated alpha-channel utility class for a CSS custom property)
+            const header = document.getElementById('site-header');
+            const onScroll = () => {
+                if (window.pageYOffset > 24) {
+                    header.style.backgroundColor = 'rgba(251, 246, 234, 0.95)';
+                    header.style.backdropFilter = 'blur(12px)';
+                    header.style.borderBottomColor = 'var(--line)';
+                } else {
+                    header.style.backgroundColor = 'transparent';
+                    header.style.backdropFilter = 'none';
+                    header.style.borderBottomColor = 'transparent';
+                }
+            };
+            window.addEventListener('scroll', onScroll, { passive: true });
+            onScroll();
+
+            // Mobile menu toggle (plain JS — no framework dependency on this guest page)
+            const menuToggle = document.getElementById('mobile-menu-toggle');
+            const menu = document.getElementById('mobile-menu');
+            const iconOpen = document.getElementById('icon-open');
+            const iconClose = document.getElementById('icon-close');
+            if (menuToggle && menu) {
+                menuToggle.addEventListener('click', () => {
+                    const isOpen = menu.getAttribute('data-open') === 'true';
+                    menu.setAttribute('data-open', String(!isOpen));
+                    menuToggle.setAttribute('aria-expanded', String(!isOpen));
+                    iconOpen.classList.toggle('hidden', !isOpen);
+                    iconClose.classList.toggle('hidden', isOpen);
+                });
+            }
+        </script>
     </body>
 </html>
