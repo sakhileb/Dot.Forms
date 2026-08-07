@@ -1,11 +1,13 @@
 <x-guest-layout>
-    <div style="width: 100%; max-width: 700px; background: var(--paper-deep); border-radius: 16px; border: 1px solid var(--line); padding: 40px; box-shadow: 0 1px 3px rgba(34, 27, 18, 0.05); margin: 0 auto;">
-        <div style="margin-bottom: 32px;">
-            <a href="{{ route('welcome') }}" style="display: flex; align-items: center; gap: 10px; text-decoration: none; margin-bottom: 24px;">
-                <img src="{{ asset('images/dot_forms.png') }}" alt="Dot Forms" class="h-12 w-auto">
-            </a>
+    <div class="w-full max-w-2xl">
+        <div class="flex justify-center mb-8 press">
+            <x-authentication-card-logo />
         </div>
-        <div style="font-size: 14px; color: #221b12; line-height: 1.8;">
+
+        <p class="font-mono text-[11px] tracking-[0.18em] uppercase text-[var(--red)] mb-2">Legal</p>
+        <h1 class="font-display font-semibold text-2xl text-[var(--ink)] mb-4">Terms of Service</h1>
+
+        <div class="rounded-2xl border p-6 sm:p-8 prose prose-headings:font-display prose-a:text-[var(--red)]" style="background: var(--paper-deep); border-color: var(--line); box-shadow: 0 1px 3px rgba(34, 27, 18, 0.05);">
             {!! $terms !!}
         </div>
     </div>

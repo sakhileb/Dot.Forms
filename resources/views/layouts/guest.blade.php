@@ -51,8 +51,16 @@
         </style>
     </head>
     <body class="antialiased">
-        <div class="min-h-screen flex flex-col items-center justify-center px-5 py-12 sm:px-8">
-            {{ $slot }}
+        <div class="relative min-h-screen flex flex-col items-center justify-center px-5 py-12 sm:px-8 overflow-hidden">
+            {{-- Same hero photo as welcome.blade.php's CTA section (clipboard checklist next to a
+            cup of coffee, by Testeur de CBD, unsplash.com/photos/UFb4LPahwHQ), with the same
+            paper-toned linear-gradient scrim the CTA section itself uses. --}}
+            <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1642188537432-41c8a331ebdb?q=80&w=2400&auto=format&fit=crop');"></div>
+            <div class="absolute inset-0" style="background: linear-gradient(180deg, var(--paper) 0%, rgba(251,246,234,0.86) 45%, var(--paper) 100%);"></div>
+
+            <div class="relative z-10 w-full flex flex-col items-center">
+                {{ $slot }}
+            </div>
         </div>
         @livewireScripts
     </body>
