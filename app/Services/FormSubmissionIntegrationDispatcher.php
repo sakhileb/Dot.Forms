@@ -2,9 +2,9 @@
 
 namespace App\Services;
 
-use App\Services\Ai\AiCrmFieldMapper;
 use App\Models\Form;
 use App\Models\FormSubmission;
+use App\Services\Ai\AiCrmFieldMapper;
 use App\Support\SsrfGuard;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -12,9 +12,7 @@ use Throwable;
 
 class FormSubmissionIntegrationDispatcher
 {
-    public function __construct(protected AiCrmFieldMapper $crmMapper)
-    {
-    }
+    public function __construct(protected AiCrmFieldMapper $crmMapper) {}
 
     public function dispatch(Form $form, FormSubmission $submission): void
     {

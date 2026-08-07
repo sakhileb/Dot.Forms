@@ -1,12 +1,11 @@
 <?php
 
 use App\Http\Controllers\Auth\EcosystemAuthController;
-
 use App\Livewire\Dashboard\Analytics as DashboardAnalytics;
-use App\Livewire\Forms\Builder;
 use App\Livewire\Forms\AiAnalytics;
 use App\Livewire\Forms\AiBuilder;
 use App\Livewire\Forms\AiFieldSuggestion;
+use App\Livewire\Forms\Builder;
 use App\Livewire\Forms\PublicView;
 use App\Livewire\Forms\Submissions;
 use App\Models\Team;
@@ -30,7 +29,6 @@ Route::get('/cookies', function () {
         'cookies' => Str::markdown(file_get_contents(Jetstream::localizedMarkdownPath('cookies.md'))),
     ]);
 })->name('cookies');
-
 
 Route::middleware([
     'auth:sanctum',
@@ -67,6 +65,5 @@ Route::middleware([
     Route::get('/teams/{team}/forms/{form}/ai-analytics', AiAnalytics::class)
         ->name('teams.forms.ai-analytics');
 });
-
 
 Route::get('/forms/{slug}', PublicView::class)->name('forms.public');

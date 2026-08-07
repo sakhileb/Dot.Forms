@@ -11,8 +11,7 @@ class FormSubmissionsExport implements FromArray, WithHeadings
     public function __construct(
         protected Form $form,
         protected array $fieldIds
-    ) {
-    }
+    ) {}
 
     public function headings(): array
     {
