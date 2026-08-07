@@ -124,7 +124,11 @@
 
         <!-- Hero -->
         <section class="relative overflow-hidden pt-32 pb-20 sm:pt-40 sm:pb-24 px-5 sm:px-8">
-            <div class="max-w-[1400px] mx-auto">
+            <!-- Photo: person writing on a white form paper, by Firmbee.com,
+            unsplash.com/photos/person-writing-on-white-form-paper-9i5eqBarv-k -->
+            <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1564846824194-346b7871b855?q=80&w=2400&auto=format&fit=crop');"></div>
+            <div class="absolute inset-0" style="background: linear-gradient(100deg, var(--paper) 0%, rgba(251,246,234,0.94) 40%, rgba(251,246,234,0.75) 65%, rgba(251,246,234,0.55) 100%);"></div>
+            <div class="max-w-[1400px] mx-auto relative">
                 <div class="grid lg:grid-cols-[1.15fr_0.85fr] gap-14 lg:gap-16 items-center">
                     <div class="reveal" data-reveal>
                         <p class="font-mono text-xs tracking-[0.18em] uppercase text-[var(--red)] mb-6">
