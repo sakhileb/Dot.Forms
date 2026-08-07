@@ -8,7 +8,7 @@
             <h1 style="font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:700;color:#f4f4f5;margin:0 0 0.2rem;letter-spacing:-0.01em;">Form Builder</h1>
             <p style="font-size:0.78rem;color:#52525b;margin:0;">Collect responses, analyse submissions, and build workflows</p>
         </div>
-        <a href="{{ Route::has('teams.forms.ai-builder') ? route('teams.forms.ai-builder', auth()->user()->currentTeam) : '#' }}" class="dot-btn dot-btn-primary">
+        <a href="{{ Route::has('teams.forms.ai-builder') && auth()->user()->currentTeam ? route('teams.forms.ai-builder', auth()->user()->currentTeam) : '#' }}" class="dot-btn dot-btn-primary">
             <span class="material-symbols-rounded" style="font-size:15px;">add</span>
             New Form
         </a>
@@ -83,7 +83,7 @@
             <span class="material-symbols-rounded" style="font-size:40px;color:#3f3f46;display:block;margin-bottom:1rem;">edit_document</span>
             <h3 style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;color:#f4f4f5;margin:0 0 0.5rem;">No forms yet</h3>
             <p style="font-size:0.8rem;color:#52525b;margin:0 0 1.5rem;max-width:280px;margin-left:auto;margin-right:auto;">Build your first form with our AI-powered builder. Drag, drop, and publish in minutes.</p>
-            <a href="{{ Route::has('teams.forms.ai-builder') ? route('teams.forms.ai-builder', $team) : '#' }}" class="dot-btn dot-btn-primary">
+            <a href="{{ Route::has('teams.forms.ai-builder') && $team ? route('teams.forms.ai-builder', $team) : '#' }}" class="dot-btn dot-btn-primary">
                 <span class="material-symbols-rounded" style="font-size:15px;">auto_awesome</span>
                 Create with AI
             </a>

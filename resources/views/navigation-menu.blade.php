@@ -38,7 +38,7 @@
         <!-- Right Side Menu -->
         <div style="display: flex; align-items: center; gap: 16px;">
             <!-- Team Dropdown -->
-            @if (Laravel\Jetstream\Jetstream::hasTeamFeatures())
+            @if (Laravel\Jetstream\Jetstream::hasTeamFeatures() && Auth::user()->currentTeam)
                 <div class="relative" x-data="{ teamOpen: false }">
                     <button @click="teamOpen = !teamOpen" style="display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 500; color: #374151; background: none; border: 1px solid #E5E7EB; padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: border-color .12s;">
                         {{ Auth::user()->currentTeam->name }}
@@ -56,11 +56,15 @@
                                     @php
                                         $isCurrentTeam = $team->id === Auth::user()->currentTeam->id;
                                     @endphp
-                                    @if($isCurrentTeam)
-                                        <a href="{{ route('teams.switch', $team) }}" style="display: block; padding: 8px 12px; font-size: 13px; color: var(--yellow-dark); text-decoration: none; border-radius: 6px; transition: background .12s; background: var(--yellow-light);" class="hover:bg-gray-50">{{ $team->name }}</a>
-                                    @else
-                                        <a href="{{ route('teams.switch', $team) }}" style="display: block; padding: 8px 12px; font-size: 13px; color: #374151; text-decoration: none; border-radius: 6px; transition: background .12s;" class="hover:bg-gray-50">{{ $team->name }}</a>
-                                    @endif
+                                    {{-- Switching teams is a state change (writes current_team_id), not a
+                                         navigable page -- Jetstream only exposes it as PUT current-team.update,
+                                         there is no GET-able "teams.switch" route. --}}
+                                    <form method="POST" action="{{ route('current-team.update') }}">
+                                        @csrf
+                                        @method('PUT')
+                                        <input type="hidden" name="team_id" value="{{ $team->id }}">
+                                        <button type="submit" style="display: block; width: 100%; text-align: left; padding: 8px 12px; font-size: 13px; color: {{ $isCurrentTeam ? 'var(--yellow-dark)' : '#374151' }}; border: none; background: {{ $isCurrentTeam ? 'var(--yellow-light)' : 'none' }}; border-radius: 6px; transition: background .12s; cursor: pointer;" class="hover:bg-gray-50">{{ $team->name }}</button>
+                                    </form>
                                 @endforeach
                             </div>
                         @endif
