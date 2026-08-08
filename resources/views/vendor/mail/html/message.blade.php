@@ -4,7 +4,7 @@
 <x-mail::header :url="config('app.url')">
 {{-- config('app.name') is stale ("Laravel") in this environment's .env — hardcoded here so the
 branded theme doesn't inherit that mismatch. See wiki.md changelog for the known gap. --}}
-<img src="{{ asset('images/dot_forms.png') }}" class="logo" alt="Dot.Forms">
+<img src="{{ asset('images/dot_forms-light.png') }}" class="logo" alt="Dot.Forms">
 </x-mail::header>
 </x-slot:header>
 
