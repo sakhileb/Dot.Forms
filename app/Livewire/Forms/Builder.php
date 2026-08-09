@@ -3,15 +3,18 @@
 namespace App\Livewire\Forms;
 
 use App\Models\Form;
+use App\Models\FormIntegration;
 use App\Models\FormUserRole;
 use App\Models\FormVersion;
 use App\Models\Team;
 use App\Rules\SafeWebhookUrl;
 use App\Services\Ai\AiFieldSuggestionEngine;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -50,6 +53,10 @@ class Builder extends Component
     public ?int $editingFieldIndex = null;
 
     public ?int $selectedVersionId = null;
+
+    public ?string $rejectingIntegrationType = null;
+
+    public string $integrationRejectReason = '';
 
     /**
      * @var array<int, string>
@@ -352,10 +359,6 @@ class Builder extends Component
                 'limit_responses' => $validated['settings']['limit_responses'] ?? null,
                 'open_at' => $validated['settings']['open_at'] ?? null,
                 'close_at' => $validated['settings']['close_at'] ?? null,
-                'webhook_url' => $validated['settings']['webhook_url'] ?? null,
-                'slack_webhook_url' => $validated['settings']['slack_webhook_url'] ?? null,
-                'zapier_webhook_url' => $validated['settings']['zapier_webhook_url'] ?? null,
-                'make_webhook_url' => $validated['settings']['make_webhook_url'] ?? null,
                 'theme' => $validated['settings']['theme'] ?? 'light',
                 'brand_color' => $validated['settings']['brand_color'] ?? '#4f46e5',
                 'custom_css' => $this->sanitizeCustomCss((string) ($validated['settings']['custom_css'] ?? '')),
@@ -366,7 +369,6 @@ class Builder extends Component
                 'quiz_answer_key' => $this->parseAnswerKey((string) ($validated['settings']['quiz_answer_key_json'] ?? '')),
                 'conversational_mode' => (bool) ($validated['settings']['conversational_mode'] ?? false),
                 'crm_provider' => $validated['settings']['crm_provider'] ?? 'none',
-                'crm_webhook_url' => $validated['settings']['crm_webhook_url'] ?? null,
             ],
         ];
 
@@ -376,6 +378,8 @@ class Builder extends Component
 
         $this->form->fill($formData);
         $this->form->save();
+
+        $this->syncIntegrations($validated['settings']);
 
         $this->form->fields()->delete();
 
@@ -428,6 +432,54 @@ class Builder extends Component
         }
     }
 
+    /**
+     * @param  array<string, mixed>  $settings
+     */
+    protected function syncIntegrations(array $settings): void
+    {
+        $slots = [
+            'webhook_url' => 'webhook',
+            'slack_webhook_url' => 'slack',
+            'zapier_webhook_url' => 'zapier',
+            'make_webhook_url' => 'make',
+            'crm_webhook_url' => 'crm',
+        ];
+
+        foreach ($slots as $settingsKey => $type) {
+            $url = trim((string) ($settings[$settingsKey] ?? ''));
+            $existing = $this->form->integrations()->where('type', $type)->first();
+
+            if ($url === '') {
+                $existing?->delete();
+
+                continue;
+            }
+
+            if ($existing && $existing->url === $url && $existing->status === 'active') {
+                // Unchanged active URL -- no-op, does not re-trigger review.
+                continue;
+            }
+
+            if ($existing) {
+                $existing->update([
+                    'url' => $url,
+                    'status' => 'pending_approval',
+                    'rejected_reason' => null,
+                    'reviewed_by' => null,
+                    'reviewed_at' => null,
+                ]);
+            } else {
+                FormIntegration::create([
+                    'form_id' => $this->form->id,
+                    'type' => $type,
+                    'url' => $url,
+                    'status' => 'pending_approval',
+                    'proposed_by' => auth()->id(),
+                ]);
+            }
+        }
+    }
+
     protected function hydrateState(): void
     {
         $this->title = $this->form->title;
@@ -453,6 +505,21 @@ class Builder extends Component
             'crm_provider' => 'none',
             'crm_webhook_url' => null,
         ], $this->form->settings ?? []);
+
+        foreach ($this->form->integrations as $integration) {
+            $key = match ($integration->type) {
+                'webhook' => 'webhook_url',
+                'slack' => 'slack_webhook_url',
+                'zapier' => 'zapier_webhook_url',
+                'make' => 'make_webhook_url',
+                'crm' => 'crm_webhook_url',
+                default => null,
+            };
+
+            if ($key !== null) {
+                $this->settings[$key] = $integration->url;
+            }
+        }
 
         $this->settings['quiz_answer_key_json'] = json_encode($this->settings['quiz_answer_key'] ?? [], JSON_PRETTY_PRINT);
 
@@ -499,6 +566,75 @@ class Builder extends Component
                 ];
             })
             ->toArray();
+    }
+
+    public function getIntegrationsProperty(): Collection
+    {
+        return $this->form->integrations()->get()->keyBy('type');
+    }
+
+    public function approveIntegration(string $type): void
+    {
+        abort_unless($this->form->isApprover(Auth::user()), 403);
+
+        $integration = $this->form->integrations()->where('type', $type)->first();
+
+        if (! $integration || $integration->status !== 'pending_approval') {
+            return;
+        }
+
+        $integration->update([
+            'status' => 'active',
+            'reviewed_by' => auth()->id(),
+            'reviewed_at' => now(),
+        ]);
+    }
+
+    public function rejectIntegration(string $type, string $reason): void
+    {
+        abort_unless($this->form->isApprover(Auth::user()), 403);
+
+        if (trim($reason) === '') {
+            throw ValidationException::withMessages([
+                'integrationRejectReason' => 'A rejection reason is required.',
+            ]);
+        }
+
+        $integration = $this->form->integrations()->where('type', $type)->first();
+
+        if (! $integration || $integration->status !== 'pending_approval') {
+            return;
+        }
+
+        $integration->update([
+            'status' => 'rejected',
+            'rejected_reason' => $reason,
+            'reviewed_by' => auth()->id(),
+            'reviewed_at' => now(),
+        ]);
+    }
+
+    public function promptRejectIntegration(string $type): void
+    {
+        $this->rejectingIntegrationType = $type;
+        $this->integrationRejectReason = '';
+    }
+
+    public function cancelRejectIntegration(): void
+    {
+        $this->rejectingIntegrationType = null;
+        $this->integrationRejectReason = '';
+    }
+
+    public function confirmRejectIntegration(): void
+    {
+        if (! $this->rejectingIntegrationType) {
+            return;
+        }
+
+        $this->rejectIntegration($this->rejectingIntegrationType, $this->integrationRejectReason);
+        $this->rejectingIntegrationType = null;
+        $this->integrationRejectReason = '';
     }
 
     public function render()

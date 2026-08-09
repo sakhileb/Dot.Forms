@@ -303,12 +303,41 @@
                             </select>
                         </div>
 
+                        @php $isApprover = $this->form->isApprover(auth()->user()); @endphp
+
                         @if (($settings['crm_provider'] ?? 'none') !== 'none')
                             <div>
                                 <label style="display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.5px;">
                                     CRM Webhook URL
                                 </label>
                                 <input type="url" wire:model.live="settings.crm_webhook_url" style="width: 100%; padding: 10px 12px; border: 1px solid #E5E5E5; border-radius: 6px; font-size: 13px; font-family: 'Inter', sans-serif;" />
+
+                                @php $integration = $this->integrations->get('crm'); @endphp
+                                @if ($integration)
+                                    <div style="margin-top: 6px; font-size: 12px;">
+                                        @if ($integration->status === 'active')
+                                            <span style="color: #16a34a; font-weight: 600;">Active</span>
+                                        @elseif ($integration->status === 'rejected')
+                                            <span style="color: #dc2626; font-weight: 600;">Rejected: {{ $integration->rejected_reason }}</span>
+                                        @elseif ($isApprover)
+                                            <span style="color: #d97706; font-weight: 600;">Pending approval</span>
+                                            @if ($rejectingIntegrationType === 'crm')
+                                                <div style="display: flex; gap: 6px; margin-top: 4px;">
+                                                    <input type="text" wire:model="integrationRejectReason" placeholder="Reason for rejecting" style="flex: 1; padding: 6px 8px; border: 1px solid #E5E5E5; border-radius: 6px; font-size: 12px;" />
+                                                    <button type="button" wire:click="confirmRejectIntegration" style="padding: 6px 10px; background: #dc2626; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">Confirm Reject</button>
+                                                    <button type="button" wire:click="cancelRejectIntegration" style="padding: 6px 10px; background: #E5E5E5; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">Cancel</button>
+                                                </div>
+                                            @else
+                                                <div style="display: flex; gap: 6px; margin-top: 4px;">
+                                                    <button type="button" wire:click="approveIntegration('crm')" style="padding: 6px 10px; background: #16a34a; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">Approve</button>
+                                                    <button type="button" wire:click="promptRejectIntegration('crm')" style="padding: 6px 10px; background: #dc2626; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">Reject</button>
+                                                </div>
+                                            @endif
+                                        @else
+                                            <span style="color: #d97706; font-weight: 600;">Pending approval (awaiting the form owner)</span>
+                                        @endif
+                                    </div>
+                                @endif
                             </div>
                         @endif
 
@@ -321,26 +350,50 @@
 
                         <hr style="border: none; border-top: 1px solid #E5E5E5; margin: 0;">
 
-                        <div>
-                            <label style="display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.5px;">
-                                Slack Webhook
-                            </label>
-                            <input type="url" wire:model.live="settings.slack_webhook_url" style="width: 100%; padding: 10px 12px; border: 1px solid #E5E5E5; border-radius: 6px; font-size: 13px; font-family: 'Inter', sans-serif;" placeholder="https://hooks.slack.com/..." />
-                        </div>
+                        @php
+                            $integrationSlots = [
+                                'webhook' => ['label' => 'Webhook', 'field' => 'webhook_url', 'placeholder' => 'https://example.com/webhook'],
+                                'slack' => ['label' => 'Slack Webhook', 'field' => 'slack_webhook_url', 'placeholder' => 'https://hooks.slack.com/...'],
+                                'zapier' => ['label' => 'Zapier Webhook', 'field' => 'zapier_webhook_url', 'placeholder' => 'https://hooks.zapier.com/...'],
+                                'make' => ['label' => 'Make Webhook', 'field' => 'make_webhook_url', 'placeholder' => 'https://hook.make.com/...'],
+                            ];
+                        @endphp
 
-                        <div>
-                            <label style="display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.5px;">
-                                Zapier Webhook
-                            </label>
-                            <input type="url" wire:model.live="settings.zapier_webhook_url" style="width: 100%; padding: 10px 12px; border: 1px solid #E5E5E5; border-radius: 6px; font-size: 13px; font-family: 'Inter', sans-serif;" placeholder="https://hooks.zapier.com/..." />
-                        </div>
+                        @foreach ($integrationSlots as $type => $slot)
+                            <div>
+                                <label style="display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.5px;">
+                                    {{ $slot['label'] }}
+                                </label>
+                                <input type="url" wire:model.live="settings.{{ $slot['field'] }}" style="width: 100%; padding: 10px 12px; border: 1px solid #E5E5E5; border-radius: 6px; font-size: 13px; font-family: 'Inter', sans-serif;" placeholder="{{ $slot['placeholder'] }}" />
 
-                        <div>
-                            <label style="display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.5px;">
-                                Make Webhook
-                            </label>
-                            <input type="url" wire:model.live="settings.make_webhook_url" style="width: 100%; padding: 10px 12px; border: 1px solid #E5E5E5; border-radius: 6px; font-size: 13px; font-family: 'Inter', sans-serif;" placeholder="https://hook.make.com/..." />
-                        </div>
+                                @php $integration = $this->integrations->get($type); @endphp
+                                @if ($integration)
+                                    <div style="margin-top: 6px; font-size: 12px;">
+                                        @if ($integration->status === 'active')
+                                            <span style="color: #16a34a; font-weight: 600;">Active</span>
+                                        @elseif ($integration->status === 'rejected')
+                                            <span style="color: #dc2626; font-weight: 600;">Rejected: {{ $integration->rejected_reason }}</span>
+                                        @elseif ($isApprover)
+                                            <span style="color: #d97706; font-weight: 600;">Pending approval</span>
+                                            @if ($rejectingIntegrationType === $type)
+                                                <div style="display: flex; gap: 6px; margin-top: 4px;">
+                                                    <input type="text" wire:model="integrationRejectReason" placeholder="Reason for rejecting" style="flex: 1; padding: 6px 8px; border: 1px solid #E5E5E5; border-radius: 6px; font-size: 12px;" />
+                                                    <button type="button" wire:click="confirmRejectIntegration" style="padding: 6px 10px; background: #dc2626; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">Confirm Reject</button>
+                                                    <button type="button" wire:click="cancelRejectIntegration" style="padding: 6px 10px; background: #E5E5E5; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">Cancel</button>
+                                                </div>
+                                            @else
+                                                <div style="display: flex; gap: 6px; margin-top: 4px;">
+                                                    <button type="button" wire:click="approveIntegration('{{ $type }}')" style="padding: 6px 10px; background: #16a34a; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">Approve</button>
+                                                    <button type="button" wire:click="promptRejectIntegration('{{ $type }}')" style="padding: 6px 10px; background: #dc2626; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">Reject</button>
+                                                </div>
+                                            @endif
+                                        @else
+                                            <span style="color: #d97706; font-weight: 600;">Pending approval (awaiting the form owner)</span>
+                                        @endif
+                                    </div>
+                                @endif
+                            </div>
+                        @endforeach
 
                         <hr style="border: none; border-top: 1px solid #E5E5E5; margin: 0;">
 
