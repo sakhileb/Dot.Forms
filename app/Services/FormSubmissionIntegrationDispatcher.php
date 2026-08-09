@@ -19,13 +19,10 @@ class FormSubmissionIntegrationDispatcher
         $settings = is_array($form->settings) ? $form->settings : [];
         $crmProvider = (string) ($settings['crm_provider'] ?? 'generic');
 
-        $targets = array_filter([
-            'webhook' => $settings['webhook_url'] ?? null,
-            'slack' => $settings['slack_webhook_url'] ?? null,
-            'zapier' => $settings['zapier_webhook_url'] ?? null,
-            'make' => $settings['make_webhook_url'] ?? null,
-            'crm' => $settings['crm_webhook_url'] ?? null,
-        ]);
+        $targets = $form->integrations()
+            ->where('status', 'active')
+            ->pluck('url', 'type')
+            ->all();
 
         if ($targets === []) {
             return;
