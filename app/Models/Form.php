@@ -96,6 +96,29 @@ class Form extends Model
         return $this->hasMany(FormUserRole::class);
     }
 
+    public function integrations(): HasMany
+    {
+        return $this->hasMany(FormIntegration::class);
+    }
+
+    /**
+     * Narrower than editableBy() -- an editor can propose an integration
+     * URL, but only an owner-equivalent user may approve it. Reuses the
+     * same three-way check editableBy() uses for its owner-equivalent
+     * branch (form creator, team owner) and additionally accepts an
+     * explicit FormUserRole of 'owner' (not 'editor').
+     */
+    public function isApprover(User $user): bool
+    {
+        if ((int) $this->user_id === (int) $user->id || $user->ownsTeam($this->team)) {
+            return true;
+        }
+
+        $role = $this->userRoles()->where('user_id', $user->id)->value('role');
+
+        return $role === 'owner';
+    }
+
     public function versions(): HasMany
     {
         return $this->hasMany(FormVersion::class);
