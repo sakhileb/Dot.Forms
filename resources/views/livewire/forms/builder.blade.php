@@ -3,7 +3,7 @@
     collectKeys() {
         return Array.from(this.$refs.fieldList.querySelectorAll('[data-key]')).map((el) => el.dataset.key);
     }
-}" wire:poll.20s="refreshPresence">
+}">
     <div style="display: flex; flex-direction: column; gap: 28px; max-width: 1400px; margin: 0 auto;">
         <!-- Header -->
         <div style="display: flex; flex-direction: column; gap: 24px;">
@@ -44,11 +44,19 @@
             </div>
         @endif
 
-        @if (count($activeEditors) > 0)
-            <div style="padding: 14px 16px; background: linear-gradient(135deg, #F0F9FF 0%, #F0F4FF 100%); border: 1px solid #BAE6FD; border-radius: 8px; font-size: 14px; color: #0C4A6E;">
-                👥 Currently editing: {{ collect($activeEditors)->pluck('name')->implode(', ') }}
-            </div>
-        @endif
+        {{-- Populated live by Echo presence (see script at the bottom of this
+             file) instead of a Cache-backed poll -- accurate immediately,
+             not up to 20s stale. --}}
+        <div id="activeEditorsBanner" class="hidden" style="padding: 14px 16px; background: linear-gradient(135deg, #F0F9FF 0%, #F0F4FF 100%); border: 1px solid #BAE6FD; border-radius: 8px; font-size: 14px; color: #0C4A6E;">
+            👥 Currently editing: <span id="activeEditorsList"></span>
+        </div>
+
+        <div id="builderUpdatedBanner" class="hidden" style="padding: 14px 16px; background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%); border: 1px solid #FDE68A; border-radius: 8px; font-size: 14px; color: #92400E; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+            <span id="builderUpdatedMessage"></span>
+            <button type="button" onclick="window.location.reload()" style="padding: 6px 14px; background: #92400E; color: white; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; flex-shrink: 0;">
+                Reload
+            </button>
+        </div>
 
         <!-- Main Layout -->
         <div style="display: grid; grid-template-columns: 280px 1fr 320px; gap: 24px; align-items: start;">
@@ -470,3 +478,59 @@
         </div>
     @endif
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!window.Echo) {
+            // BROADCAST_CONNECTION isn't set to reverb (see .env.example) --
+            // the builder still works, presence/live-update banners just
+            // don't appear.
+            return;
+        }
+
+        const formId = {{ $form->id }};
+        const currentUserId = {{ auth()->id() ?? 'null' }};
+        const banner = document.getElementById('activeEditorsBanner');
+        const list = document.getElementById('activeEditorsList');
+        const updatedBanner = document.getElementById('builderUpdatedBanner');
+        const updatedMessage = document.getElementById('builderUpdatedMessage');
+
+        let editors = {};
+
+        const renderEditors = () => {
+            const others = Object.values(editors).filter((e) => e.id !== currentUserId);
+
+            if (others.length === 0) {
+                banner.classList.add('hidden');
+
+                return;
+            }
+
+            list.textContent = others.map((e) => e.name).join(', ');
+            banner.classList.remove('hidden');
+        };
+
+        window.Echo.join(`form-builder.${formId}`)
+            .here((members) => {
+                editors = {};
+                members.forEach((m) => { editors[m.id] = m; });
+                renderEditors();
+            })
+            .joining((member) => {
+                editors[member.id] = member;
+                renderEditors();
+            })
+            .leaving((member) => {
+                delete editors[member.id];
+                renderEditors();
+            })
+            .listen('.builder.updated', (payload) => {
+                if (payload.user_id === currentUserId) {
+                    return;
+                }
+
+                updatedMessage.textContent = `${payload.user_name} just saved changes to this form.`;
+                updatedBanner.classList.remove('hidden');
+            });
+    });
+</script>

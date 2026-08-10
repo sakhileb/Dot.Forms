@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Forms;
 
+use App\Events\FormBuilderUpdated;
 use App\Models\Form;
 use App\Models\FormIntegration;
 use App\Models\FormUserRole;
@@ -11,7 +12,6 @@ use App\Rules\SafeWebhookUrl;
 use App\Services\Ai\AiFieldSuggestionEngine;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -43,8 +43,6 @@ class Builder extends Component
     public ?int $selectedMemberId = null;
 
     public string $selectedMemberRole = 'viewer';
-
-    public array $activeEditors = [];
 
     public array $versions = [];
 
@@ -88,7 +86,6 @@ class Builder extends Component
         $this->team = $team;
         $this->form = $form;
         $this->hydrateState();
-        $this->refreshPresence();
     }
 
     public function addField(string $type): void
@@ -209,7 +206,6 @@ class Builder extends Component
     public function autoSave(): void
     {
         $this->persist(false);
-        $this->refreshPresence();
     }
 
     public function assignMemberRole(): void
@@ -445,6 +441,12 @@ class Builder extends Component
         $this->createVersionSnapshot();
         $this->hydrateState();
         $this->logoUpload = null;
+
+        // ->toOthers(): the saving client already has what it just wrote;
+        // this only needs to reach other tabs with this form's builder
+        // open, so they know to reload rather than have their own next
+        // autosave silently clobber it.
+        broadcast(new FormBuilderUpdated($this->form->id, (int) $user->id, (string) $user->name))->toOthers();
 
         if ($flashOnError) {
             session()->flash('status', 'Changes saved.');
@@ -730,42 +732,5 @@ class Builder extends Component
         $this->form->update([
             'current_version' => $nextVersion,
         ]);
-    }
-
-    public function refreshPresence(): void
-    {
-        $user = Auth::user();
-
-        if (! $user) {
-            return;
-        }
-
-        $cacheKey = 'form:presence:'.$this->form->id;
-        $presence = Cache::get($cacheKey, []);
-
-        if (! is_array($presence)) {
-            $presence = [];
-        }
-
-        $presence[$user->id] = [
-            'name' => $user->name,
-            'last_seen' => now()->timestamp,
-        ];
-
-        $cutoff = now()->subMinute()->timestamp;
-
-        $presence = collect($presence)
-            ->filter(fn ($editor) => (int) ($editor['last_seen'] ?? 0) >= $cutoff)
-            ->all();
-
-        Cache::put($cacheKey, $presence, now()->addMinutes(5));
-
-        $this->activeEditors = collect($presence)
-            ->map(fn ($editor, $id) => [
-                'id' => (int) $id,
-                'name' => (string) ($editor['name'] ?? 'Unknown'),
-            ])
-            ->values()
-            ->all();
     }
 }
