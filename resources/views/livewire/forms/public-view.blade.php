@@ -2,7 +2,13 @@
     $consentLabel = $form->settings['consent_label'] ?? 'I consent to processing my submitted data.';
     $customCss = $form->settings['custom_css'] ?? '';
     $isConversational = (bool) ($form->settings['conversational_mode'] ?? false);
-    $orderedFields = $form->fields()->orderBy('order')->get();
+    // Filtered once here (rather than skipped mid-loop) so conversational
+    // mode's step index/total stay a contiguous 0..N-1 over what the
+    // respondent can actually see -- a field hidden by conditional logic
+    // doesn't leave a gap or count toward the total.
+    $orderedFields = $form->fields()->orderBy('order')->get()
+        ->filter(fn ($field) => $this->isFieldVisible($field))
+        ->values();
     $logoUrl = $form->logo_path ? asset('storage/' . $form->logo_path) : null;
 @endphp
 
@@ -16,6 +22,12 @@
 @endif
 
 <div style="min-height: 100vh; background: linear-gradient(135deg, #FAFAFA 0%, #F5F5F5 100%); padding: 40px 24px; display: flex; align-items: center; justify-content: center;">
+    {{-- Known limitation: x-data's `total` is only evaluated once on init,
+         so if conversational_mode and conditional logic are both used
+         together, a mid-fill visibility change won't retarget Alpine's
+         step bounds until the page reloads. Conditional logic itself
+         (which fields render, validate, and get recorded) is unaffected
+         either way -- this only touches the conversational step counter. --}}
     <div style="width: 100%; max-width: 600px; background: white; border-radius: 16px; border: 1px solid #E5E5E5; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,.06);" x-data="{ submitted: @entangle('submitted'), step: 0, conversational: {{ $isConversational ? 'true' : 'false' }}, total: {{ $orderedFields->count() }} }">
         @if ($logoUrl)
             <img src="{{ $logoUrl }}" alt="Form logo" style="height: 40px; width: auto; margin-bottom: 20px;">
@@ -59,7 +71,10 @@
                         @if ($field->type === 'textarea')
                             <textarea wire:model="answers.{{ $field->id }}" rows="4" placeholder="{{ $field->placeholder }}" style="width: 100%; padding: 11px 14px; border: 1px solid #E5E5E5; border-radius: 8px; font-size: 14px; font-family: 'Inter', sans-serif; resize: vertical;"></textarea>
                         @elseif ($field->type === 'select')
-                            <select wire:model="answers.{{ $field->id }}" style="width: 100%; padding: 11px 14px; border: 1px solid #E5E5E5; border-radius: 8px; font-size: 14px; font-family: 'Inter', sans-serif;">
+                            {{-- .live: other fields' visibility can depend on this
+                                 answer, so a change here has to round-trip and
+                                 re-evaluate which fields show. --}}
+                            <select wire:model.live="answers.{{ $field->id }}" style="width: 100%; padding: 11px 14px; border: 1px solid #E5E5E5; border-radius: 8px; font-size: 14px; font-family: 'Inter', sans-serif;">
                                 <option value="">Select an option</option>
                                 @foreach (($field->options['choices'] ?? []) as $option)
                                     <option value="{{ $option }}">{{ $option }}</option>
@@ -69,20 +84,23 @@
                             <div style="display: flex; flex-direction: column; gap: 10px;">
                                 @foreach (($field->options['choices'] ?? []) as $option)
                                     <label style="display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--ink); cursor: pointer;">
-                                        <input type="radio" wire:model="answers.{{ $field->id }}" value="{{ $option }}" style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--yellow);">
+                                        <input type="radio" wire:model.live="answers.{{ $field->id }}" value="{{ $option }}" style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--yellow);">
                                         <span>{{ $option }}</span>
                                     </label>
                                 @endforeach
                             </div>
                         @elseif ($field->type === 'checkbox')
                             <label style="display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--ink); cursor: pointer;">
-                                <input type="checkbox" wire:model="answers.{{ $field->id }}" style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--yellow);">
+                                <input type="checkbox" wire:model.live="answers.{{ $field->id }}" style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--yellow);">
                                 <span>I confirm</span>
                             </label>
                         @elseif ($field->type === 'file')
                             <input type="file" wire:model="uploads.{{ $field->id }}" style="width: 100%; padding: 11px 14px; border: 1px solid #E5E5E5; border-radius: 8px; font-size: 13px;" />
                         @else
-                            <input type="{{ in_array($field->type, ['text', 'email', 'number', 'date'], true) ? $field->type : 'text' }}" wire:model="answers.{{ $field->id }}" placeholder="{{ $field->placeholder }}" style="width: 100%; padding: 11px 14px; border: 1px solid #E5E5E5; border-radius: 8px; font-size: 14px; font-family: 'Inter', sans-serif;" />
+                            {{-- .blur rather than .live: a text-type trigger still
+                                 re-evaluates visibility, but without a round-trip
+                                 on every keystroke. --}}
+                            <input type="{{ in_array($field->type, ['text', 'email', 'number', 'date'], true) ? $field->type : 'text' }}" wire:model.blur="answers.{{ $field->id }}" placeholder="{{ $field->placeholder }}" style="width: 100%; padding: 11px 14px; border: 1px solid #E5E5E5; border-radius: 8px; font-size: 14px; font-family: 'Inter', sans-serif;" />
                         @endif
 
                         @if (! empty($field->options['helper_text']))

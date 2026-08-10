@@ -3,8 +3,10 @@
 namespace App\Livewire\Forms;
 
 use App\Models\Form;
+use App\Models\FormField;
 use App\Models\FormSubmission;
 use App\Notifications\NewFormSubmissionNotification;
+use App\Services\FormFieldVisibilityEvaluator;
 use App\Services\FormSubmissionIntegrationDispatcher;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -75,6 +77,18 @@ class PublicView extends Component
         }
     }
 
+    /**
+     * Whether $field should currently be shown to the respondent, per its
+     * visibility_rule (if any) evaluated against the answers given so far.
+     * Called from the view for every field, and reused in submit()/rules()
+     * so a hidden field's answer is neither validated nor recorded.
+     */
+    public function isFieldVisible(FormField $field): bool
+    {
+        return app(FormFieldVisibilityEvaluator::class)
+            ->isVisible($field, $this->form->fields, $this->answers);
+    }
+
     public function submit(): void
     {
         $limiterKey = 'form-submit:'.$this->form->id.':'.request()->ip();
@@ -110,6 +124,16 @@ class PublicView extends Component
         $submissionData = $this->answers;
 
         foreach ($this->form->fields as $field) {
+            if (! $this->isFieldVisible($field)) {
+                // A field hidden by conditional logic was never actually
+                // shown to the respondent -- don't record whatever stale
+                // value it happened to hold (e.g. from before its trigger
+                // was answered).
+                unset($submissionData[$field->id]);
+
+                continue;
+            }
+
             if ($field->type === 'file' && isset($this->uploads[$field->id])) {
                 $submissionData[$field->id] = $this->uploads[$field->id]->store(
                     'forms/'.$this->form->id,
@@ -154,6 +178,19 @@ class PublicView extends Component
         ];
 
         foreach ($this->form->fields as $field) {
+            // A field hidden by conditional logic can't be required --
+            // the respondent has no way to fill in something they can't
+            // see.
+            if (! $this->isFieldVisible($field)) {
+                if ($field->type === 'file') {
+                    $rules['uploads.'.$field->id] = ['nullable'];
+                } else {
+                    $rules['answers.'.$field->id] = ['nullable'];
+                }
+
+                continue;
+            }
+
             $fieldRules = [];
             $storedRules = is_array($field->validation_rules) ? $field->validation_rules : [];
 

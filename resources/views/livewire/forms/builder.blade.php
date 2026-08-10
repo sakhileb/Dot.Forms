@@ -427,9 +427,37 @@
 
                     <div>
                         <label style="display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; letter-spacing: 0.5px;">
-                            Conditional Logic
+                            Show this field only if
                         </label>
-                        <textarea wire:model.live="fields.{{ $editingFieldIndex }}.conditional_logic" rows="3" style="width: 100%; padding: 10px 12px; border: 1px solid #E5E5E5; border-radius: 8px; font-size: 13px; font-family: 'Inter', sans-serif; resize: vertical;" placeholder="Example: show when field_2 equals 'yes'"></textarea>
+
+                        @php
+                            $otherFields = collect($fields)->filter(
+                                fn ($f, $i) => $i !== $editingFieldIndex && ! empty($f['key'])
+                            )->values();
+                        @endphp
+
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <select wire:model.live="fields.{{ $editingFieldIndex }}.visibility_rule.trigger_field_key" style="width: 100%; padding: 9px 10px; border: 1px solid #E5E5E5; border-radius: 8px; font-size: 13px; font-family: 'Inter', sans-serif;">
+                                <option value="">Always show</option>
+                                @foreach ($otherFields as $other)
+                                    <option value="{{ $other['key'] }}">{{ $other['label'] ?: 'Untitled field' }}</option>
+                                @endforeach
+                            </select>
+
+                            @if (! empty($fields[$editingFieldIndex]['visibility_rule']['trigger_field_key']))
+                                <div style="display: flex; gap: 8px;">
+                                    <select wire:model.live="fields.{{ $editingFieldIndex }}.visibility_rule.operator" style="flex: 1; padding: 9px 10px; border: 1px solid #E5E5E5; border-radius: 8px; font-size: 13px; font-family: 'Inter', sans-serif;">
+                                        <option value="equals">equals</option>
+                                        <option value="not_equals">does not equal</option>
+                                        <option value="contains">contains</option>
+                                    </select>
+                                    <input type="text" wire:model.live="fields.{{ $editingFieldIndex }}.visibility_rule.value" placeholder="value" style="flex: 1; padding: 9px 10px; border: 1px solid #E5E5E5; border-radius: 8px; font-size: 13px; font-family: 'Inter', sans-serif;">
+                                </div>
+                                <p style="font-size: 11px; color: var(--muted); margin: 0;">
+                                    This field is hidden from respondents until the answer above matches -- and its answer is never recorded while hidden.
+                                </p>
+                            @endif
+                        </div>
                     </div>
 
                     <div style="display: flex; gap: 12px; justify-content: flex-end; padding-top: 12px; border-top: 1px solid #E5E5E5;">

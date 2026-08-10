@@ -109,6 +109,7 @@ class Builder extends Component
             'required' => false,
             'helper_text' => null,
             'conditional_logic' => null,
+            'visibility_rule' => ['trigger_field_key' => null, 'operator' => 'equals', 'value' => ''],
         ];
     }
 
@@ -348,6 +349,9 @@ class Builder extends Component
             'fields.*.required' => ['boolean'],
             'fields.*.helper_text' => ['nullable', 'string', 'max:500'],
             'fields.*.conditional_logic' => ['nullable', 'string', 'max:1000'],
+            'fields.*.visibility_rule.trigger_field_key' => ['nullable', 'string'],
+            'fields.*.visibility_rule.operator' => ['nullable', 'in:equals,not_equals,contains'],
+            'fields.*.visibility_rule.value' => ['nullable', 'string', 'max:255'],
         ]);
 
         $formData = [
@@ -408,6 +412,15 @@ class Builder extends Component
                 $rules[] = 'date';
             }
 
+            // Every field is deleted and recreated on each save, so a DB id
+            // is never stable enough for a visibility rule to reference --
+            // it's keyed by this stable builder-assigned UUID instead
+            // (also what makes a rule survive a version revert for free:
+            // the snapshot carries the same key-based options blob).
+            $key = (string) ($this->fields[$index]['key'] ?? Str::uuid());
+            $rule = $field['visibility_rule'] ?? null;
+            $triggerKey = is_array($rule) ? ($rule['trigger_field_key'] ?? null) : null;
+
             $this->form->fields()->create([
                 'type' => $field['type'],
                 'label' => $field['label'],
@@ -416,6 +429,12 @@ class Builder extends Component
                     'choices' => $options,
                     'helper_text' => $field['helper_text'] ?? null,
                     'conditional_logic' => $field['conditional_logic'] ?? null,
+                    'field_key' => $key,
+                    'visibility_rule' => $triggerKey ? [
+                        'trigger_field_key' => $triggerKey,
+                        'operator' => $rule['operator'] ?? 'equals',
+                        'value' => $rule['value'] ?? '',
+                    ] : null,
                 ],
                 'validation_rules' => $rules,
                 'order' => $index + 1,
@@ -552,10 +571,14 @@ class Builder extends Component
             ->get()
             ->map(function ($field): array {
                 $choices = $field->options['choices'] ?? [];
+                $rule = $field->options['visibility_rule'] ?? null;
 
                 return [
                     'id' => $field->id,
-                    'key' => (string) Str::uuid(),
+                    // Falls back to a fresh key only for fields saved
+                    // before this feature existed -- every field saved
+                    // from here on always has one (see persist()).
+                    'key' => (string) ($field->options['field_key'] ?? Str::uuid()),
                     'type' => $field->type,
                     'label' => $field->label,
                     'placeholder' => $field->placeholder,
@@ -563,6 +586,11 @@ class Builder extends Component
                     'required' => in_array('required', $field->validation_rules ?? [], true),
                     'helper_text' => $field->options['helper_text'] ?? null,
                     'conditional_logic' => $field->options['conditional_logic'] ?? null,
+                    'visibility_rule' => [
+                        'trigger_field_key' => is_array($rule) ? ($rule['trigger_field_key'] ?? null) : null,
+                        'operator' => is_array($rule) ? ($rule['operator'] ?? 'equals') : 'equals',
+                        'value' => is_array($rule) ? ($rule['value'] ?? '') : '',
+                    ],
                 ];
             })
             ->toArray();
